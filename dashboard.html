@@ -15,6 +15,7 @@
   --red:#a32d2d;--red-bg:#fadbd8;
   --blue:#185fa5;--blue-bg:#e6f1fb;
   --amber:#854f0b;--amber-bg:#faeeda;
+  --teal:#0f6e56;--teal-bg:#e1f5ee;
   --radius:12px;--radius-sm:8px;
   --slate:#2C3E50;
 }
@@ -24,7 +25,7 @@
     --txt:#f0f0f0;--txt2:#aaa;--txt3:#666;
     --border:#333;
     --green-bg:#1a2e1a;--red-bg:#2e1a1a;
-    --blue-bg:#1a2535;--amber-bg:#2e2010;
+    --blue-bg:#1a2535;--amber-bg:#2e2010;--teal-bg:#0a2018;
   }
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);font-size:15px;line-height:1.5}
@@ -34,17 +35,18 @@ header h1{font-size:22px;font-weight:600;color:var(--txt)}
 header .sub{font-size:13px;color:var(--txt3);margin-top:2px}
 .back-btn{font-size:13px;color:var(--blue);text-decoration:none;border:1px solid var(--border);padding:6px 14px;border-radius:20px}
 .back-btn:hover{background:var(--bg2)}
-.section{margin-bottom:36px}
+.section{margin-bottom:40px}
 .section-title{font-size:13px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
 .stat{background:var(--bg2);border-radius:var(--radius-sm);padding:14px 16px}
 .stat-label{font-size:12px;color:var(--txt3);margin-bottom:4px}
 .stat-val{font-size:26px;font-weight:500;color:var(--txt)}
 .stat-sub{font-size:11px;color:var(--txt3);margin-top:3px}
-.chart-wrap{position:relative;width:100%;background:var(--bg2);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.chart-wrap{background:var(--bg2);border-radius:var(--radius);padding:16px;margin-bottom:12px}
 .chart-inner{position:relative;width:100%}
+.chart-label{font-size:12px;color:var(--txt3);margin-bottom:10px}
 .controls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.ctrl-btn{padding:5px 14px;font-size:12px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--txt2);cursor:pointer}
+.ctrl-btn{padding:5px 14px;font-size:12px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--txt2);cursor:pointer;transition:all .15s}
 .ctrl-btn.active{background:var(--bg3);color:var(--txt);font-weight:600}
 .legend{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
 .leg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2)}
@@ -71,7 +73,20 @@ tr:hover td{background:var(--bg2)}
 .flag{color:var(--red);font-weight:700}
 .empty{text-align:center;color:var(--txt3);font-size:14px;padding:24px}
 .spin{text-align:center;color:var(--txt3);font-size:13px;padding:16px}
-.refresh-btn{font-size:12px;color:var(--blue);border:none;background:none;cursor:pointer;margin-left:12px}
+.refresh-btn{font-size:12px;color:var(--blue);border:none;background:none;cursor:pointer;padding:6px 10px}
+
+/* Heatmap */
+.heatmap-wrap{overflow-x:auto;margin-top:8px}
+.heatmap{display:grid;gap:3px;font-size:11px}
+.hm-row{display:flex;align-items:center;gap:3px}
+.hm-label{width:36px;text-align:right;color:var(--txt3);font-size:10px;flex-shrink:0;padding-right:4px}
+.hm-cell{width:28px;height:22px;border-radius:3px;flex-shrink:0;transition:opacity .15s;cursor:default}
+.hm-cell:hover{opacity:.8}
+.hm-header{display:flex;gap:3px;padding-left:40px;margin-bottom:2px}
+.hm-header-cell{width:28px;text-align:center;font-size:10px;color:var(--txt3);flex-shrink:0}
+.hm-legend{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;color:var(--txt3)}
+.hm-legend-cells{display:flex;gap:2px}
+.hm-legend-cell{width:16px;height:16px;border-radius:2px}
 </style>
 </head>
 <body>
@@ -82,13 +97,13 @@ tr:hover td{background:var(--bg2)}
       <h1>Workshop Dashboard</h1>
       <div class="sub" id="hdr-date"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:12px">
+    <div style="display:flex;align-items:center;gap:8px">
       <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
       <a href="https://chiesaguitars.github.io/workshop-tracker/" class="back-btn">← App</a>
     </div>
   </header>
 
-  <!-- ── TIMELINE ── -->
+  <!-- ── 1. TIMELINE ── -->
   <div class="section">
     <div class="section-title">Build timeline</div>
     <div class="legend">
@@ -96,12 +111,12 @@ tr:hover td{background:var(--bg2)}
       <div class="leg"><div class="leg-dot" style="background:#A32D2D"></div>Finished</div>
       <div class="leg"><div class="leg-line" style="background:#888780"></div>Active build</div>
       <div class="leg"><div class="leg-dot" style="background:#85B7EB"></div>Daily hours</div>
-      <div class="leg"><div class="leg-dash"></div>Target</div>
+      <div class="leg"><div class="leg-dash"></div>Target (6.5h)</div>
     </div>
     <div class="controls">
-      <button class="ctrl-btn active" onclick="setRange(90,this)">3 months</button>
-      <button class="ctrl-btn" onclick="setRange(180,this)">6 months</button>
-      <button class="ctrl-btn" onclick="setRange(365,this)">1 year</button>
+      <button class="ctrl-btn active" onclick="setTLRange(90,this)">3 months</button>
+      <button class="ctrl-btn" onclick="setTLRange(180,this)">6 months</button>
+      <button class="ctrl-btn" onclick="setTLRange(365,this)">1 year</button>
     </div>
     <div class="chart-wrap">
       <div class="chart-inner" id="top-wrap" style="height:120px">
@@ -115,41 +130,68 @@ tr:hover td{background:var(--bg2)}
     </div>
   </div>
 
-  <!-- ── HOURS ANALYSIS ── -->
+  <!-- ── 2. HOURS ANALYSIS ── -->
   <div class="section">
     <div class="section-title">Work hours analysis</div>
     <div class="stat-grid" id="hours-stats"><div class="spin">Loading…</div></div>
+
     <div class="chart-wrap">
-      <div style="font-size:12px;color:var(--txt3);margin-bottom:8px">Weekly totals — last 12 weeks</div>
+      <div class="chart-label">Weekly totals — last 12 weeks</div>
       <div class="chart-inner" style="height:180px">
-        <canvas id="weekChart" role="img" aria-label="Weekly hours bar chart"></canvas>
+        <canvas id="weekChart" role="img" aria-label="Weekly hours"></canvas>
       </div>
     </div>
+
     <div class="chart-wrap">
-      <div style="font-size:12px;color:var(--txt3);margin-bottom:8px">Monthly totals — current year</div>
+      <div class="chart-label">Monthly totals — current year</div>
       <div class="chart-inner" style="height:180px">
-        <canvas id="monthChart" role="img" aria-label="Monthly hours bar chart"></canvas>
+        <canvas id="monthChart" role="img" aria-label="Monthly hours"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- ── GUITAR PRODUCTION ── -->
+  <!-- ── 3. AVERAGE BY WEEKDAY ── -->
+  <div class="section">
+    <div class="section-title">Average hours by weekday</div>
+    <div class="controls" id="wd-controls">
+      <button class="ctrl-btn active" onclick="setWDRange(30,this)">1 month</button>
+      <button class="ctrl-btn" onclick="setWDRange(90,this)">3 months</button>
+      <button class="ctrl-btn" onclick="setWDRange(365,this)">1 year</button>
+      <button class="ctrl-btn" onclick="setWDRange(0,this)">All time</button>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-inner" style="height:220px">
+        <canvas id="wdChart" role="img" aria-label="Average hours by weekday"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. HEATMAP ── -->
+  <div class="section">
+    <div class="section-title">Hours by time of day — weekdays only</div>
+    <div class="chart-wrap">
+      <div class="chart-label">Average hours logged per time slot, by day of week (Mon–Fri). Colour intensity = more time worked in that slot.</div>
+      <div id="heatmap-container"><div class="spin">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ── 5. GUITAR PRODUCTION ── -->
   <div class="section">
     <div class="section-title">Guitar production</div>
     <div class="stat-grid" id="guitar-stats"><div class="spin">Loading…</div></div>
     <div class="table-wrap">
-      <table id="guitar-table">
+      <table>
         <thead><tr><th>ID</th><th>Customer</th><th>Model</th><th>Started</th><th>Finished</th><th>Days</th><th>Status</th></tr></thead>
         <tbody id="guitar-tbody"><tr><td colspan="7" class="spin">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
 
-  <!-- ── OPERATION TIMING ── -->
+  <!-- ── 6. OPERATION TIMING ── -->
   <div class="section">
     <div class="section-title">Operation timing</div>
     <div class="search-row">
-      <input type="text" id="op-search" placeholder="Search operations e.g. frets, binding…" onkeydown="if(event.key==='Enter')searchOps()">
+      <input type="text" id="op-search" placeholder="Search e.g. frets, binding, top…">
       <button onclick="searchOps()">Search</button>
     </div>
     <div id="op-stats" style="display:none" class="task-stats">
@@ -163,19 +205,22 @@ tr:hover td{background:var(--bg2)}
         <tbody id="op-tbody"></tbody>
       </table>
     </div>
-    <div id="op-empty" class="empty">Search for an operation above to see its history</div>
+    <div id="op-empty" class="empty">Search for an operation above to see its history and timing stats</div>
   </div>
 
+  <div id="tl-tip" style="display:none;position:absolute;pointer-events:none;z-index:20"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const API = 'https://script.google.com/macros/s/AKfycby_52P3U_Dyj4Zq_2dMgX5eKAoUOCVOqijmLV-rohfacHOebleIu9xFCtNS9LX4RNE/exec';
 const LANE_COLORS = ['#5F5E5A','#888780','#B4B2A9','#D3D1C7','#378ADD','#854F0B'];
+const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAY_NAMES_FULL = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
 let allSessions=[], allTasks=[], allGuitars=[];
-let topChart, botChart, weekChart, monthChart;
-let currentRange=90;
+let topChart, botChart, weekChart, monthChart, wdChart;
+let currentTLRange=90, currentWDRange=30;
 
 // ── Init ──────────────────────────────────────────────────────
 document.getElementById('hdr-date').textContent =
@@ -190,65 +235,80 @@ async function apiGet(action) {
 
 async function loadAll() {
   try {
-    const [sd, td, gd] = await Promise.all([
+    const [sd,td,gd] = await Promise.all([
       apiGet('sessionList'),
       apiGet('taskList'),
       apiGet('guitarList'),
     ]);
-    allSessions = sd.sessions || [];
-    allTasks    = td.tasks    || [];
-    allGuitars  = gd.guitars  || [];
+    allSessions = sd.sessions||[];
+    allTasks    = td.tasks||[];
+    allGuitars  = gd.guitars||[];
   } catch(e) {
-    // fall back to empty — charts will show no data
     allSessions=[]; allTasks=[]; allGuitars=[];
   }
-  buildTimeline(currentRange);
+  buildTimeline(currentTLRange);
   buildHoursAnalysis();
+  buildWeekdayChart(currentWDRange);
+  buildHeatmap();
   buildGuitarProduction();
 }
 
 loadAll();
 
 // ── Helpers ───────────────────────────────────────────────────
-function fmtMins(min) { return min<60?Math.round(min)+'m':(min/60).toFixed(1)+'h'; }
-function fmtDate(str) {
+function fmtMins(min){ return min<60?Math.round(min)+'m':(min/60).toFixed(1)+'h'; }
+function fmtDate(str){
   if(!str) return '—';
-  const d = new Date(str);
-  return isNaN(d)?str:d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const d=parseDate(str);
+  return d&&!isNaN(d)?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):str;
 }
-function parseDate(str) {
+function parseDate(str){
   if(!str) return null;
-  // handle dd/mm/yyyy
-  if(str.includes('/')) {
-    const [d,m,y]=str.split('/');
-    return new Date(`${y}-${m}-${d}`);
-  }
+  if(str.includes('/')){const [d,m,y]=str.split('/');return new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`);}
   return new Date(str);
 }
-function toDateStr(d) { return d.toISOString().slice(0,10); }
-function daysBetween(a,b) { return Math.round((b-a)/(1000*60*60*24)); }
+function parseDateTime(dateStr, timeStr){
+  const d=parseDate(dateStr);
+  if(!d||isNaN(d)) return null;
+  if(!timeStr) return d;
+  const parts=String(timeStr).split(':');
+  if(parts.length>=2){d.setHours(parseInt(parts[0])||0,parseInt(parts[1])||0,parseInt(parts[2])||0);}
+  return d;
+}
+function toDateStr(d){ return d.toISOString().slice(0,10); }
+function daysBetween(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
+function getMondayOf(d){ const dow=(d.getDay()+6)%7,m=new Date(d); m.setDate(d.getDate()-dow); m.setHours(0,0,0,0); return m; }
+function cutoffDate(days){ if(!days) return null; const d=new Date(); d.setDate(d.getDate()-days); return d; }
 
-function getMondayOf(d) {
-  const dow=(d.getDay()+6)%7;
-  const mon=new Date(d); mon.setDate(d.getDate()-dow); mon.setHours(0,0,0,0);
-  return mon;
+// Build daily hours map from sessions
+function buildDayMap(sessions){
+  const m={};
+  sessions.forEach(s=>{
+    const dt=parseDate(s.date);
+    if(!dt||isNaN(dt)) return;
+    const k=toDateStr(dt);
+    m[k]=(m[k]||0)+(parseFloat(s.durationHrs)||0);
+  });
+  return m;
 }
 
-// ── TIMELINE ─────────────────────────────────────────────────
-function setRange(days, btn) {
-  currentRange=days;
-  document.querySelectorAll('.ctrl-btn').forEach(b=>b.classList.remove('active'));
+// ── 1. TIMELINE ───────────────────────────────────────────────
+function setTLRange(days,btn){
+  currentTLRange=days;
+  document.querySelectorAll('#wd-controls .ctrl-btn, .ctrl-btn').forEach(b=>{
+    if(b.closest('.controls')===btn.closest('.controls')) b.classList.remove('active');
+  });
   btn.classList.add('active');
   buildTimeline(days);
 }
 
-function assignLanes(builds) {
+function assignLanes(builds){
   const lanes=[];
   builds.forEach(b=>{
     let placed=false;
     for(let l=0;l<lanes.length;l++){
-      if(lanes[l].endOffset!==null && b.startOffset>lanes[l].endOffset){
-        lanes[l]=b; b.lane=l; placed=true; break;
+      if(lanes[l].endOffset!==null&&b.startOffset>lanes[l].endOffset){
+        lanes[l]=b;b.lane=l;placed=true;break;
       }
     }
     if(!placed){b.lane=lanes.length;lanes.push(b);}
@@ -256,39 +316,25 @@ function assignLanes(builds) {
   return lanes.length;
 }
 
-function buildTimeline(rangeDays) {
+function buildTimeline(rangeDays){
   const now=new Date(); now.setHours(0,0,0,0);
-
-  // Map sessions to daily hours
-  const dayHours={};
-  allSessions.forEach(s=>{
-    const d=s.date; // dd/mm/yyyy
-    if(!d) return;
-    const dt=parseDate(d);
-    if(!dt||isNaN(dt)) return;
-    const key=toDateStr(dt);
-    dayHours[key]=(dayHours[key]||0)+(parseFloat(s.durationHrs)||0);
-  });
-
-  // Build labels and hours arrays
-  const labels=[], hours=[], days=[];
+  const dayMap=buildDayMap(allSessions);
+  const labels=[],hours=[],days=[];
   for(let i=-rangeDays+1;i<=0;i++){
     const d=new Date(now); d.setDate(now.getDate()+i);
     days.push(i);
     labels.push(d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}));
-    hours.push(parseFloat((dayHours[toDateStr(d)]||0).toFixed(2)));
+    hours.push(parseFloat((dayMap[toDateStr(d)]||0).toFixed(2)));
   }
 
-  // Map guitars to build objects with day offsets
   const builds=allGuitars.map(g=>{
     const start=g.dateStarted?parseDate(g.dateStarted):null;
     const end  =g.dateFinished?parseDate(g.dateFinished):null;
     if(!start||isNaN(start)) return null;
-    const startOff=daysBetween(now,start); // negative = past
+    const startOff=daysBetween(now,start);
     const endOff  =end&&!isNaN(end)?daysBetween(now,end):null;
-    // only show if overlaps the range window
     if(startOff>0) return null;
-    if(endOff!==null && endOff<-rangeDays+1) return null;
+    if(endOff!==null&&endOff<-rangeDays+1) return null;
     return {customer:g.customer,model:g.model,startOffset:startOff,endOffset:endOff,lane:0};
   }).filter(Boolean);
 
@@ -297,50 +343,33 @@ function buildTimeline(rangeDays) {
   document.getElementById('top-wrap').style.height=topH+'px';
 
   const tickStep=rangeDays<=90?7:rangeDays<=180?14:30;
-  const xOpts={
-    ticks:{maxTicksLimit:Math.floor(rangeDays/tickStep)+1,maxRotation:45,color:'#888780',font:{size:10}},
-    grid:{color:'rgba(136,135,128,0.12)'}
-  };
+  const xOpts={ticks:{maxTicksLimit:Math.floor(rangeDays/tickStep)+1,maxRotation:45,color:'#888780',font:{size:10}},grid:{color:'rgba(136,135,128,0.12)'}};
 
-  // Top chart — build lanes
   if(topChart) topChart.destroy();
   const lineDS=builds.map(b=>{
     const pts=days.map((d,i)=>{
       if(d>=b.startOffset&&(b.endOffset===null||d<=b.endOffset)) return {x:i,y:b.lane+1};
       return null;
     }).filter(Boolean);
-    return {label:'_line_'+b.customer,data:pts,type:'line',
-      borderColor:LANE_COLORS[b.lane%LANE_COLORS.length],borderWidth:3,
-      pointRadius:0,tension:0,yAxisID:'yL',parsing:false};
+    return {label:'_line_'+b.customer,data:pts,type:'line',borderColor:LANE_COLORS[b.lane%LANE_COLORS.length],borderWidth:3,pointRadius:0,tension:0,yAxisID:'yL',parsing:false};
   });
 
-  const startPts=[], endPts=[];
+  const startPts=[],endPts=[];
   builds.forEach(b=>{
     const si=days.indexOf(b.startOffset);
-    if(si>=0){
-      const sd=new Date(now); sd.setDate(now.getDate()+b.startOffset);
-      startPts.push({x:si,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(sd))});
-    }
-    if(b.endOffset!==null){
-      const ei=days.indexOf(b.endOffset);
-      if(ei>=0){
-        const ed=new Date(now); ed.setDate(now.getDate()+b.endOffset);
-        endPts.push({x:ei,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(ed))});
-      }
+    if(si>=0){const sd=new Date(now);sd.setDate(now.getDate()+b.startOffset);startPts.push({x:si,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(sd))});}
+    if(b.endOffset!==null){const ei=days.indexOf(b.endOffset);if(ei>=0){const ed=new Date(now);ed.setDate(now.getDate()+b.endOffset);endPts.push({x:ei,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(ed));}}
     }
   });
 
+  const tip=document.getElementById('tl-tip');
   topChart=new Chart(document.getElementById('topChart'),{
     data:{labels,datasets:[...lineDS,
-      {label:'_start',data:startPts,type:'scatter',pointRadius:7,pointHoverRadius:9,
-        backgroundColor:'#3B6D11',borderColor:'#3B6D11',yAxisID:'yL',parsing:false},
-      {label:'_end',data:endPts,type:'scatter',pointRadius:7,pointHoverRadius:9,
-        backgroundColor:'#A32D2D',borderColor:'#A32D2D',yAxisID:'yL',parsing:false}
+      {label:'_start',data:startPts,type:'scatter',pointRadius:7,pointHoverRadius:9,backgroundColor:'#3B6D11',borderColor:'#3B6D11',yAxisID:'yL',parsing:false},
+      {label:'_end',data:endPts,type:'scatter',pointRadius:7,pointHoverRadius:9,backgroundColor:'#A32D2D',borderColor:'#A32D2D',yAxisID:'yL',parsing:false}
     ]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{legend:{display:false},tooltip:{enabled:false,external(ctx){
-        const tip=document.getElementById('tl-tip');
-        if(!tip) return;
         const items=ctx.tooltip.dataPoints;
         if(!items||ctx.tooltip.opacity===0){tip.style.display='none';return;}
         let html='';
@@ -352,7 +381,7 @@ function buildTimeline(rangeDays) {
         });
         if(!html){tip.style.display='none';return;}
         tip.innerHTML=html;
-        tip.style.cssText=`display:block;position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--txt);pointer-events:none;z-index:20;white-space:nowrap;left:${ctx.tooltip.caretX+12}px;top:${ctx.tooltip.caretY-8}px`;
+        tip.style.cssText=`display:block;position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--txt);pointer-events:none;white-space:nowrap;left:${ctx.tooltip.caretX+12}px;top:${ctx.tooltip.caretY}px`;
       }}},
       scales:{
         x:{...xOpts,ticks:{...xOpts.ticks,display:false}},
@@ -361,11 +390,6 @@ function buildTimeline(rangeDays) {
     }
   });
 
-  // Tooltip div for top chart
-  let tipEl=document.getElementById('tl-tip');
-  if(!tipEl){tipEl=document.createElement('div');tipEl.id='tl-tip';tipEl.style.display='none';document.querySelector('.page').appendChild(tipEl);}
-
-  // Bottom chart — hours
   if(botChart) botChart.destroy();
   botChart=new Chart(document.getElementById('botChart'),{
     data:{labels,datasets:[
@@ -373,32 +397,15 @@ function buildTimeline(rangeDays) {
       {label:'Target',data:Array(labels.length).fill(6.5),type:'line',borderColor:'#EF9F27',borderWidth:1.5,borderDash:[4,3],pointRadius:0,yAxisID:'yH'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{
-        title(i){return labels[i[0].dataIndex];},
-        label(i){return i.dataset.label==='Target'?'Target: 6.5h':`Worked: ${i.raw.toFixed(1)}h`;}
-      }}},
-      scales:{
-        x:xOpts,
-        yH:{type:'linear',position:'left',min:0,max:12,
-          title:{display:true,text:'hours / day',color:'#888780',font:{size:10}},
-          ticks:{stepSize:2,color:'#888780',font:{size:10}},
-          grid:{color:'rgba(136,135,128,0.12)'}}
-      }
+      plugins:{legend:{display:false},tooltip:{callbacks:{title(i){return labels[i[0].dataIndex];},label(i){return i.dataset.label==='Target'?'Target: 6.5h':`Worked: ${i.raw.toFixed(1)}h`;}}}},
+      scales:{x:xOpts,yH:{type:'linear',position:'left',min:0,max:12,title:{display:true,text:'hours / day',color:'#888780',font:{size:10}},ticks:{stepSize:2,color:'#888780',font:{size:10}},grid:{color:'rgba(136,135,128,0.12)'}}}
     }
   });
 }
 
-// ── HOURS ANALYSIS ────────────────────────────────────────────
-function buildHoursAnalysis() {
-  // Aggregate sessions by date
-  const dayMap={};
-  allSessions.forEach(s=>{
-    const dt=parseDate(s.date);
-    if(!dt||isNaN(dt)) return;
-    const key=toDateStr(dt);
-    dayMap[key]=(dayMap[key]||0)+(parseFloat(s.durationHrs)||0);
-  });
-
+// ── 2. HOURS ANALYSIS ─────────────────────────────────────────
+function buildHoursAnalysis(){
+  const dayMap=buildDayMap(allSessions);
   const days=Object.values(dayMap).filter(h=>h>0);
   const totalHrs=days.reduce((a,h)=>a+h,0);
   const avgDay=days.length?totalHrs/days.length:0;
@@ -406,20 +413,17 @@ function buildHoursAnalysis() {
   document.getElementById('hours-stats').innerHTML=`
     <div class="stat"><div class="stat-label">Total hours (all time)</div><div class="stat-val">${totalHrs.toFixed(1)}</div></div>
     <div class="stat"><div class="stat-label">Days with workshop time</div><div class="stat-val">${days.length}</div></div>
-    <div class="stat"><div class="stat-label">Average per working day</div><div class="stat-val">${avgDay.toFixed(1)} h</div></div>
+    <div class="stat"><div class="stat-label">Avg per working day</div><div class="stat-val">${avgDay.toFixed(1)} h</div></div>
     <div class="stat"><div class="stat-label">Tasks logged</div><div class="stat-val">${allTasks.length}</div></div>
   `;
 
-  // Weekly totals — last 12 weeks
   const now=new Date(); now.setHours(0,0,0,0);
-  const weekLabels=[], weekData=[];
+  const weekLabels=[],weekData=[];
   for(let w=11;w>=0;w--){
     const mon=getMondayOf(new Date(now.getTime()-w*7*86400000));
     const sun=new Date(mon.getTime()+6*86400000);
     let total=0;
-    for(let d=new Date(mon);d<=sun;d.setDate(d.getDate()+1)){
-      total+=(dayMap[toDateStr(new Date(d))]||0);
-    }
+    for(let d=new Date(mon);d<=sun;d.setDate(d.getDate()+1)) total+=(dayMap[toDateStr(new Date(d))]||0);
     weekLabels.push(mon.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}));
     weekData.push(parseFloat(total.toFixed(1)));
   }
@@ -433,23 +437,16 @@ function buildHoursAnalysis() {
     ]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label(i){return i.dataset.label==='Target'?'Target: 39.5h':`${i.raw.toFixed(1)} h`;},title(i){return 'w/c '+i[0].label;}}}},
-      scales:{
-        x:{ticks:{color:'#888780',font:{size:10},maxRotation:45},grid:{color:'rgba(136,135,128,0.12)'}},
-        y:{min:0,ticks:{color:'#888780',font:{size:10}},grid:{color:'rgba(136,135,128,0.12)'}}
-      }
+      scales:{x:{ticks:{color:'#888780',font:{size:10},maxRotation:45},grid:{color:'rgba(136,135,128,0.12)'}},y:{min:0,ticks:{color:'#888780',font:{size:10}},grid:{color:'rgba(136,135,128,0.12)'}}}
     }
   });
 
-  // Monthly totals — current year
   const year=now.getFullYear();
   const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const monthData=monthNames.map((_,mi)=>{
-    let total=0;
-    Object.entries(dayMap).forEach(([k,h])=>{
-      const d=new Date(k);
-      if(d.getFullYear()===year&&d.getMonth()===mi) total+=h;
-    });
-    return parseFloat(total.toFixed(1));
+    let t=0;
+    Object.entries(dayMap).forEach(([k,h])=>{const d=new Date(k);if(d.getFullYear()===year&&d.getMonth()===mi)t+=h;});
+    return parseFloat(t.toFixed(1));
   });
 
   if(monthChart) monthChart.destroy();
@@ -458,16 +455,169 @@ function buildHoursAnalysis() {
     data:{labels:monthNames,datasets:[{label:'Hours',data:monthData,backgroundColor:'#5DCAA5',borderRadius:3,barPercentage:.7}]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label(i){return `${i.raw.toFixed(1)} h`;},title(i){return monthNames[i[0].dataIndex]+' '+year;}}}},
+      scales:{x:{ticks:{color:'#888780',font:{size:10}},grid:{color:'rgba(136,135,128,0.12)'}},y:{min:0,ticks:{color:'#888780',font:{size:10}},grid:{color:'rgba(136,135,128,0.12)'}}}
+    }
+  });
+}
+
+// ── 3. AVERAGE BY WEEKDAY ─────────────────────────────────────
+function setWDRange(days,btn){
+  currentWDRange=days;
+  btn.closest('.controls').querySelectorAll('.ctrl-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildWeekdayChart(days);
+}
+
+function buildWeekdayChart(rangeDays){
+  const cutoff=cutoffDate(rangeDays);
+  const filtered=allSessions.filter(s=>{
+    if(!cutoff) return true;
+    const d=parseDate(s.date);
+    return d&&!isNaN(d)&&d>=cutoff;
+  });
+
+  // For each weekday (0=Mon..6=Sun), accumulate total hours and count of days
+  const totals=Array(7).fill(0), counts=Array(7).fill(0);
+  const seen={}; // track unique dates per weekday to get day count
+
+  filtered.forEach(s=>{
+    const d=parseDate(s.date);
+    if(!d||isNaN(d)) return;
+    const dow=(d.getDay()+6)%7; // 0=Mon
+    const key=toDateStr(d)+'_'+dow;
+    totals[dow]+=(parseFloat(s.durationHrs)||0);
+    if(!seen[key]){seen[key]=true;counts[dow]++;}
+  });
+
+  const avgs=totals.map((t,i)=>counts[i]?parseFloat((t/counts[i]).toFixed(2)):0);
+  const colors=DAY_NAMES.map((_,i)=>i<5?'#85B7EB':'#D3D1C7'); // blue weekdays, grey weekends
+
+  if(wdChart) wdChart.destroy();
+  wdChart=new Chart(document.getElementById('wdChart'),{
+    type:'bar',
+    data:{
+      labels:DAY_NAMES,
+      datasets:[{
+        label:'Avg hours',
+        data:avgs,
+        backgroundColor:colors,
+        borderRadius:4,
+        barPercentage:.7,
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title(i){return DAY_NAMES_FULL[i[0].dataIndex];},
+          label(i){
+            const dow=i.dataIndex;
+            return [`Avg: ${i.raw.toFixed(1)} h`, `From ${counts[dow]} day${counts[dow]===1?'':'s'}`];
+          }
+        }}
+      },
       scales:{
-        x:{ticks:{color:'#888780',font:{size:10}},grid:{color:'rgba(136,135,128,0.12)'}},
-        y:{min:0,ticks:{color:'#888780',font:{size:10}},grid:{color:'rgba(136,135,128,0.12)'}}
+        x:{ticks:{color:'#888780',font:{size:11}},grid:{display:false}},
+        y:{min:0,max:10,title:{display:true,text:'avg hours',color:'#888780',font:{size:10}},ticks:{color:'#888780',font:{size:10}},grid:{color:'rgba(136,135,128,0.12)'}}
       }
     }
   });
 }
 
-// ── GUITAR PRODUCTION ─────────────────────────────────────────
-function buildGuitarProduction() {
+// ── 4. HEATMAP ────────────────────────────────────────────────
+function buildHeatmap(){
+  // Hours 7–20, Mon–Fri only
+  const HOURS=Array.from({length:14},(_,i)=>i+7); // 7,8,...,20
+  const DAYS=5; // Mon=0 ... Fri=4
+  // grid[dow][hour] = {total, count}
+  const grid=Array.from({length:DAYS},()=>Array.from({length:HOURS.length},()=>({total:0,count:0})));
+
+  allSessions.forEach(s=>{
+    const d=parseDate(s.date);
+    if(!d||isNaN(d)) return;
+    const dow=(d.getDay()+6)%7;
+    if(dow>=5) return; // skip weekends
+
+    // Parse start/end times
+    let start=parseDateTime(s.date, s.startTime);
+    let end  =parseDateTime(s.date, s.endTime);
+    if(!start||!end||isNaN(start)||isNaN(end)) return;
+    if(end<=start) return;
+
+    const totalSec=(end-start)/1000;
+    const totalHrs=totalSec/3600;
+
+    // Distribute hours across each slot this session covers
+    HOURS.forEach((h,hi)=>{
+      const slotStart=new Date(d); slotStart.setHours(h,0,0,0);
+      const slotEnd  =new Date(d); slotEnd.setHours(h+1,0,0,0);
+      // overlap between session and slot
+      const overlapStart=Math.max(start.getTime(),slotStart.getTime());
+      const overlapEnd  =Math.min(end.getTime(),slotEnd.getTime());
+      if(overlapEnd>overlapStart){
+        const overlapHrs=(overlapEnd-overlapStart)/3600000;
+        grid[dow][hi].total+=overlapHrs;
+        grid[dow][hi].count++;
+      }
+    });
+  });
+
+  // Find max value for colour scaling
+  let maxVal=0;
+  grid.forEach(row=>row.forEach(cell=>{if(cell.total>maxVal)maxVal=cell.total;}));
+  if(maxVal===0) maxVal=1;
+
+  // Colour scale: white → teal
+  function cellColor(val){
+    if(val===0) return 'var(--bg3)';
+    const intensity=val/maxVal;
+    // interpolate from #e1f5ee (teal-50) to #085041 (teal-800)
+    const r=Math.round(225+(8-225)*intensity);
+    const g=Math.round(245+(80-245)*intensity);
+    const b=Math.round(238+(65-238)*intensity);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  const dayLabels=['Mon','Tue','Wed','Thu','Fri'];
+
+  let html='<div class="heatmap-wrap"><div class="heatmap">';
+  // Header row (day names)
+  html+='<div class="hm-header">';
+  dayLabels.forEach(d=>{html+=`<div class="hm-header-cell">${d}</div>`;});
+  html+='</div>';
+
+  // Hour rows
+  HOURS.forEach((h,hi)=>{
+    const label=h+':00';
+    html+=`<div class="hm-row"><div class="hm-label">${label}</div>`;
+    for(let dow=0;dow<DAYS;dow++){
+      const val=grid[dow][hi].total;
+      const avg=grid[dow][hi].count?val/grid[dow][hi].count:0;
+      const tip=val>0?`${DAY_NAMES_FULL[dow]} ${label}: avg ${avg.toFixed(1)}h over ${grid[dow][hi].count} days`:`${DAY_NAMES_FULL[dow]} ${label}: no data`;
+      html+=`<div class="hm-cell" style="background:${cellColor(val)}" title="${tip}"></div>`;
+    }
+    html+='</div>';
+  });
+
+  html+='</div>';
+
+  // Legend
+  html+='<div class="hm-legend"><span>Less</span><div class="hm-legend-cells">';
+  [0,.2,.4,.6,.8,1].forEach(v=>{
+    const intensity=v;
+    const r=Math.round(225+(8-225)*intensity);
+    const g=Math.round(245+(80-245)*intensity);
+    const b=Math.round(238+(65-238)*intensity);
+    html+=`<div class="hm-legend-cell" style="background:${v===0?'var(--bg3)':`rgb(${r},${g},${b})`}"></div>`;
+  });
+  html+='</div><span>More</span></div>';
+  html+='</div>';
+
+  document.getElementById('heatmap-container').innerHTML=html;
+}
+
+// ── 5. GUITAR PRODUCTION ──────────────────────────────────────
+function buildGuitarProduction(){
   const finished=allGuitars.filter(g=>g.status==='Finished');
   const active  =allGuitars.filter(g=>g.status==='Active');
   const buildDays=finished.map(g=>{
@@ -479,7 +629,7 @@ function buildGuitarProduction() {
   document.getElementById('guitar-stats').innerHTML=`
     <div class="stat"><div class="stat-label">Active builds</div><div class="stat-val">${active.length}</div></div>
     <div class="stat"><div class="stat-label">Finished builds</div><div class="stat-val">${finished.length}</div></div>
-    <div class="stat"><div class="stat-label">Average build time</div><div class="stat-val">${avgDays!==null?avgDays+' d':'—'}</div></div>
+    <div class="stat"><div class="stat-label">Avg build time</div><div class="stat-val">${avgDays!==null?avgDays+' d':'—'}</div></div>
     <div class="stat"><div class="stat-label">Total builds</div><div class="stat-val">${allGuitars.length}</div></div>
   `;
 
@@ -489,54 +639,39 @@ function buildGuitarProduction() {
     const s=parseDate(g.dateStarted),e=parseDate(g.dateFinished);
     const days=s&&e&&!isNaN(s)&&!isNaN(e)?daysBetween(s,e):s&&!isNaN(s)?daysBetween(s,new Date())+'*':'—';
     return `<tr>
-      <td>${g.id}</td>
-      <td>${g.customer}</td>
-      <td>${g.model||'—'}</td>
-      <td>${fmtDate(g.dateStarted)}</td>
-      <td>${g.dateFinished?fmtDate(g.dateFinished):'—'}</td>
+      <td>${g.id}</td><td>${g.customer}</td><td>${g.model||'—'}</td>
+      <td>${fmtDate(g.dateStarted)}</td><td>${g.dateFinished?fmtDate(g.dateFinished):'—'}</td>
       <td>${days}</td>
       <td><span class="badge ${g.status==='Active'?'badge-active':'badge-done'}">${g.status}</span></td>
     </tr>`;
   }).join('');
 }
 
-// ── OPERATION TIMING ─────────────────────────────────────────
-function searchOps() {
+// ── 6. OPERATION TIMING ───────────────────────────────────────
+function searchOps(){
   const q=document.getElementById('op-search').value.trim().toLowerCase();
   if(!q) return;
-  const matches=allTasks.filter(t=>(t.taskName||'').toLowerCase().includes(q)&&t.durationMin>0);
+  const matches=allTasks.filter(t=>(t.taskName||'').toLowerCase().includes(q)&&parseFloat(t.durationMin)>0);
   const table=document.getElementById('op-table');
   const empty=document.getElementById('op-empty');
   const stats=document.getElementById('op-stats');
-
-  if(!matches.length){
-    table.style.display='none';stats.style.display='none';
-    empty.textContent='No results for "'+q+'"';empty.style.display='block';
-    return;
-  }
-
+  if(!matches.length){table.style.display='none';stats.style.display='none';empty.textContent='No results for "'+q+'"';empty.style.display='block';return;}
   const durations=matches.map(t=>parseFloat(t.durationMin)||0).filter(d=>d>0&&d<=300);
   const avg=durations.length?durations.reduce((a,b)=>a+b,0)/durations.length:0;
   const min=durations.length?Math.min(...durations):0;
   const max=durations.length?Math.max(...durations):0;
-
   document.getElementById('op-avg').textContent=fmtMins(avg);
   document.getElementById('op-min').textContent=fmtMins(min);
   document.getElementById('op-max').textContent=fmtMins(max);
   stats.style.display='grid';
-
   document.getElementById('op-tbody').innerHTML=matches.map(t=>`
     <tr>
-      <td>${fmtDate(t.date)}</td>
-      <td>${t.taskName}</td>
-      <td>${t.guitarId||'—'}</td>
-      <td class="${t.durationMin>300?'flag':''}">${fmtMins(t.durationMin)}${t.durationMin>300?' ⚠':''}</td>
+      <td>${fmtDate(t.date)}</td><td>${t.taskName}</td><td>${t.guitarId||'—'}</td>
+      <td class="${parseFloat(t.durationMin)>300?'flag':''}">${fmtMins(parseFloat(t.durationMin))}${parseFloat(t.durationMin)>300?' ⚠':''}</td>
     </tr>`).join('');
-
   table.style.display='table';
   empty.style.display='none';
 }
-
 document.getElementById('op-search').addEventListener('keydown',e=>{if(e.key==='Enter')searchOps();});
 </script>
 </body>
