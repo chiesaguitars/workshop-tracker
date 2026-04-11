@@ -224,10 +224,34 @@ window.addEventListener('DOMContentLoaded', () => {
   loadGuitars();
   updateStats();
   flushQueue();
+  restoreTimer();
   if('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
 });
+
+function restoreTimer() {
+  const saved = localStorage.getItem('sessionStart');
+  if(!saved) return;
+  const start = new Date(saved);
+  if(isNaN(start)) { localStorage.removeItem('sessionStart'); return; }
+  // Resume — session was running when app closed
+  sessionStart = start;
+  if(!lastTaskTime) lastTaskTime = start;
+  isRunning = true;
+  const btn = document.getElementById('main-btn');
+  btn.textContent = 'Stop workshop';
+  btn.className   = 'btn btn-stop';
+  const elapsed = Math.floor((Date.now()-start)/1000);
+  document.getElementById('timer-display').textContent = fmtTimer(elapsed);
+  document.getElementById('timer-status').textContent  = 'resumed — running since '+
+    start.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  timerInterval = setInterval(() => {
+    const sec = Math.floor((Date.now()-sessionStart)/1000);
+    document.getElementById('timer-display').textContent = fmtTimer(sec);
+    document.getElementById('warn-banner').style.display = sec>=18000 ? 'block' : 'none';
+  }, 1000);
+}
 
 window.addEventListener('online',  () => { updateOnlineStatus(); flushQueue(); });
 window.addEventListener('offline', () => updateOnlineStatus());
@@ -289,6 +313,7 @@ function startTimer() {
   sessionStart = new Date();
   if(!lastTaskTime) lastTaskTime = new Date();
   isRunning = true;
+  localStorage.setItem('sessionStart', sessionStart.toISOString());
   const btn = document.getElementById('main-btn');
   btn.textContent = 'Stop workshop';
   btn.className   = 'btn btn-stop';
@@ -305,6 +330,7 @@ async function stopTimer() {
   const endTime = new Date();
   const dSec    = Math.floor((endTime-sessionStart)/1000);
   isRunning     = false;
+  localStorage.removeItem('sessionStart');
   document.getElementById('warn-banner').style.display  = 'none';
   document.getElementById('timer-display').textContent   = '00:00:00';
   document.getElementById('timer-status').textContent    = 'saving…';
