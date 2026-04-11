@@ -226,7 +226,17 @@ window.addEventListener('DOMContentLoaded', () => {
   flushQueue();
   restoreTimer();
   if('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        newSW.addEventListener('statechange', () => {
+          if(newSW.state === 'activated') location.reload();
+        });
+      });
+    }).catch(()=>{});
+    navigator.serviceWorker.addEventListener('message', e => {
+      if(e.data && e.data.type === 'SW_UPDATED') location.reload();
+    });
   }
 });
 
