@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2C3E50">
+<link rel="manifest" href="manifest.json">
+<title>Workshop Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f5;--bg3:#ebebeb;
+  --txt:#1a1a1a;--txt2:#666;--txt3:#999;
+  --border:#e0e0e0;
+  --green:#2d6a2d;--green-bg:#eaf4ea;
+  --red:#a32d2d;--red-bg:#fadbd8;
+  --blue:#185fa5;--blue-bg:#e6f1fb;
+  --amber:#854f0b;--amber-bg:#faeeda;
+  --radius:12px;--radius-sm:8px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1a1a1a;--bg2:#242424;--bg3:#2e2e2e;
+    --txt:#f0f0f0;--txt2:#aaa;--txt3:#666;
+    --border:#333;
+    --green-bg:#1a2e1a;--red-bg:#2e1a1a;
+    --blue-bg:#1a2535;--amber-bg:#2e2010;
+  }
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);font-size:16px}
+#app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto}
+#header{padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+#header h1{font-size:18px;font-weight:600;color:var(--txt)}
+#header .sub{font-size:13px;color:var(--txt3);margin-top:2px}
+#screens{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.screen{display:none;padding:20px}
+.screen.active{display:block}
+#nav{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 14px;border:none;background:transparent;color:var(--txt3);font-size:10px;cursor:pointer;transition:color .15s}
+.nav-btn.active{color:var(--blue)}
+.nav-btn svg{width:22px;height:22px}
+.card{background:var(--bg2);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.btn{display:block;width:100%;padding:14px;font-size:16px;font-weight:600;border-radius:var(--radius);border:none;cursor:pointer;transition:opacity .15s;margin-bottom:10px}
+.btn:active{opacity:.75}
+.btn-start{background:var(--green-bg);color:var(--green)}
+.btn-stop{background:var(--red-bg);color:var(--red)}
+.btn-primary{background:var(--blue-bg);color:var(--blue)}
+.btn-neutral{background:var(--bg3);color:var(--txt2);font-weight:500}
+.btn-sm{display:inline-block;width:auto;padding:7px 14px;font-size:14px;font-weight:500}
+.btn-warn{background:var(--amber-bg);color:var(--amber)}
+#timer-display{text-align:center;font-size:64px;font-weight:300;letter-spacing:2px;font-variant-numeric:tabular-nums;padding:16px 0;color:var(--txt)}
+#timer-status{text-align:center;font-size:13px;color:var(--txt3);margin-bottom:16px;min-height:18px}
+#warn-banner{display:none;background:var(--red-bg);color:var(--red);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:12px;font-size:14px;font-weight:600;text-align:center}
+.ac-wrap{position:relative;margin-bottom:10px}
+.ac-wrap input{width:100%;padding:12px 14px;font-size:15px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--txt);outline:none}
+.ac-wrap input:focus{border-color:var(--blue)}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);z-index:100;margin-top:2px;overflow:hidden;max-height:200px;overflow-y:auto}
+.ac-item{padding:11px 14px;font-size:15px;cursor:pointer;color:var(--txt)}
+.ac-item:active,.ac-item.sel{background:var(--bg2)}
+.ac-item em{font-style:normal;font-weight:700;color:var(--blue)}
+select,input[type=text],input[type=number],textarea{width:100%;padding:12px 14px;font-size:15px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--txt);outline:none;margin-bottom:10px;appearance:none;-webkit-appearance:none}
+select:focus,input:focus,textarea:focus{border-color:var(--blue)}
+textarea{resize:none;min-height:72px}
+label{display:block;font-size:13px;color:var(--txt2);margin-bottom:4px;margin-top:6px}
+.todo-item{display:flex;align-items:flex-start;gap:12px;padding:14px;background:var(--bg2);border-radius:var(--radius-sm);margin-bottom:8px}
+.todo-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .2s}
+.todo-check.done{background:var(--green);border-color:var(--green)}
+.todo-check svg{display:none}
+.todo-check.done svg{display:block}
+.todo-text{flex:1;font-size:15px;color:var(--txt);line-height:1.4}
+.todo-sub{font-size:12px;color:var(--txt3);margin-top:2px}
+.guitar-item{display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--bg2);border-radius:var(--radius-sm);margin-bottom:8px}
+.guitar-info .gname{font-size:15px;font-weight:500;color:var(--txt)}
+.guitar-info .gsub{font-size:12px;color:var(--txt3);margin-top:2px}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.badge-active{background:var(--green-bg);color:var(--green)}
+.badge-done{background:var(--bg3);color:var(--txt3)}
+.log-item{padding:12px 14px;background:var(--bg2);border-radius:var(--radius-sm);margin-bottom:6px}
+.log-row{display:flex;justify-content:space-between;align-items:baseline}
+.log-title{font-size:14px;font-weight:500;color:var(--txt)}
+.log-val{font-size:14px;font-weight:600;color:var(--txt)}
+.log-sub{font-size:12px;color:var(--txt3);margin-top:2px}
+.flag-warn{color:var(--red);font-weight:700}
+#modal-wrap{display:none;position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center}
+#modal-wrap.open{display:flex}
+.modal{background:var(--bg);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:16px;color:var(--txt)}
+.modal-close{float:right;font-size:24px;color:var(--txt3);cursor:pointer;line-height:1;margin-top:-2px}
+.section-hdr{font-size:12px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:var(--bg2);border-radius:var(--radius-sm);padding:12px 14px}
+.stat-label{font-size:12px;color:var(--txt3);margin-bottom:3px}
+.stat-val{font-size:24px;font-weight:500;color:var(--txt)}
+.stat-sub{font-size:11px;color:var(--txt3);margin-top:2px}
+.prog-wrap{margin-bottom:16px}
+.prog-bg{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:4px 0}
+.prog-fill{height:5px;background:var(--green);border-radius:3px;transition:width .4s}
+.prog-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--txt3)}
+.empty{text-align:center;color:var(--txt3);font-size:14px;padding:32px 0}
+.spin{text-align:center;color:var(--txt3);font-size:13px;padding:20px}
+.offline-bar{display:none;background:var(--amber-bg);color:var(--amber);font-size:13px;font-weight:600;text-align:center;padding:6px;flex-shrink:0}
+.offline-bar.show{display:block}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <h1>Workshop Tracker</h1>
+    <div class="sub" id="hdr-date"></div>
+  </div>
+  <div class="offline-bar" id="offline-bar">Offline — data will sync when connected</div>
+
+  <div id="screens">
+    <!-- TIMER -->
+    <div class="screen active" id="screen-timer">
+      <div id="warn-banner">⚠ Timer running over 5 hours — did you forget to stop?</div>
+      <div id="timer-display">00:00:00</div>
+      <div id="timer-status">ready</div>
+      <button class="btn btn-start" id="main-btn" onclick="toggleTimer()">Start workshop</button>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-label">Today</div>
+          <div class="stat-val" id="stat-today">0.0 h</div>
+          <div class="stat-sub" id="stat-sessions">0 sessions</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">This week</div>
+          <div class="stat-val" id="stat-week">0.0 h</div>
+          <div class="stat-sub">target 39.5 h</div>
+        </div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-bg"><div class="prog-fill" id="week-bar" style="width:0%"></div></div>
+        <div class="prog-labels"><span>0 h</span><span id="week-pct">0%</span><span>39.5 h</span></div>
+      </div>
+      <div class="section-hdr">Log a task</div>
+      <div class="ac-wrap">
+        <input type="text" id="task-input" placeholder="What did you just finish?" autocomplete="off"
+          oninput="onTaskInput()" onkeydown="onTaskKey(event)">
+        <div class="ac-list" id="ac-list" style="display:none"></div>
+      </div>
+      <label>Guitar (optional)</label>
+      <select id="task-guitar">
+        <option value="">— select active guitar —</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="saveTask()" style="width:100%">Save task</button>
+    </div>
+
+    <!-- TODO -->
+    <div class="screen" id="screen-todo">
+      <button class="btn btn-primary btn-sm" onclick="openAddTodo()" style="margin-bottom:16px">+ Add task</button>
+      <div id="todo-list"><div class="spin">Loading…</div></div>
+    </div>
+
+    <!-- GUITARS -->
+    <div class="screen" id="screen-guitars">
+      <button class="btn btn-primary btn-sm" onclick="openNewGuitar()" style="margin-bottom:16px">+ New build</button>
+      <div class="section-hdr">Active</div>
+      <div id="guitar-active"></div>
+      <div class="section-hdr">Recently finished</div>
+      <div id="guitar-finished"></div>
+    </div>
+
+    <!-- LOG -->
+    <div class="screen" id="screen-log">
+      <div class="section-hdr">Recent sessions</div>
+      <div id="log-sessions"></div>
+      <div class="section-hdr" style="margin-top:8px">Recent tasks</div>
+      <div id="log-tasks"></div>
+    </div>
+  </div>
+
+  <div id="nav">
+    <button class="nav-btn active" onclick="showScreen('timer',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      Timer
+    </button>
+    <button class="nav-btn" onclick="showScreen('todo',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      To-do
+    </button>
+    <button class="nav-btn" onclick="showScreen('guitars',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+      Guitars
+    </button>
+    <button class="nav-btn" onclick="showScreen('log',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      Log
+    </button>
+  </div>
+</div>
+
+<div id="modal-wrap" onclick="closeModal(event)">
+  <div class="modal" id="modal-body"></div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycby_52P3U_Dyj4Zq_2dMgX5eKAoUOCVOqijmLV-rohfacHOebleIu9xFCtNS9LX4RNE/exec';
+
+// ── State ─────────────────────────────────────────────────────
+let isRunning=false, sessionStart=null, timerInterval=null;
+let lastTaskTime=null, keywords=[], guitars=[], acIdx=-1;
+
+// ── Offline queue ─────────────────────────────────────────────
+const Q = {
+  get(){ try{return JSON.parse(localStorage.getItem('offlineQ'))||[];}catch(e){return[];} },
+  add(p){ const q=Q.get(); q.push(p); localStorage.setItem('offlineQ',JSON.stringify(q)); },
+  clear(){ localStorage.removeItem('offlineQ'); },
+};
+
+// ── Local cache ───────────────────────────────────────────────
+const LC = {
+  get(k){ try{return JSON.parse(localStorage.getItem(k))||[];}catch(e){return[];} },
+  set(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} },
+};
+
+// ── Init ──────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('hdr-date').textContent =
+    new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  updateOnlineStatus();
+  loadKeywords();
+  loadGuitars();
+  updateStats();
+  flushQueue();
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+});
+
+window.addEventListener('online',  () => { updateOnlineStatus(); flushQueue(); });
+window.addEventListener('offline', () => updateOnlineStatus());
+
+function updateOnlineStatus() {
+  document.getElementById('offline-bar').classList.toggle('show', !navigator.onLine);
+}
+
+// ── Offline queue flush ───────────────────────────────────────
+async function flushQueue() {
+  if(!navigator.onLine) return;
+  const q = Q.get();
+  if(!q.length) return;
+  for(const p of q) {
+    try { await apiCall(p); } catch(e) { return; }
+  }
+  Q.clear();
+}
+
+// ── Navigation ────────────────────────────────────────────────
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='todo')    renderTodos();
+  if(name==='guitars') renderGuitars();
+  if(name==='log')     renderLog();
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function apiCall(params) {
+  const url = API + '?' + new URLSearchParams(params).toString();
+  const res = await fetch(url);
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error||'API error');
+  return data;
+}
+
+async function api(params) {
+  if(!navigator.onLine) {
+    Q.add(params);
+    return { ok: true, queued: true };
+  }
+  try {
+    return await apiCall(params);
+  } catch(e) {
+    Q.add(params);
+    throw e;
+  }
+}
+
+// ── Timer ─────────────────────────────────────────────────────
+function toggleTimer() {
+  if(!isRunning) startTimer(); else stopTimer();
+}
+
+function startTimer() {
+  sessionStart = new Date();
+  if(!lastTaskTime) lastTaskTime = new Date();
+  isRunning = true;
+  const btn = document.getElementById('main-btn');
+  btn.textContent = 'Stop workshop';
+  btn.className   = 'btn btn-stop';
+  document.getElementById('timer-status').textContent = 'session running';
+  timerInterval = setInterval(() => {
+    const sec = Math.floor((Date.now()-sessionStart)/1000);
+    document.getElementById('timer-display').textContent = fmtTimer(sec);
+    document.getElementById('warn-banner').style.display = sec>=18000 ? 'block' : 'none';
+  }, 1000);
+}
+
+async function stopTimer() {
+  clearInterval(timerInterval);
+  const endTime = new Date();
+  const dSec    = Math.floor((endTime-sessionStart)/1000);
+  isRunning     = false;
+  document.getElementById('warn-banner').style.display  = 'none';
+  document.getElementById('timer-display').textContent   = '00:00:00';
+  document.getElementById('timer-status').textContent    = 'saving…';
+  document.getElementById('main-btn').textContent        = 'Start workshop';
+  document.getElementById('main-btn').className          = 'btn btn-start';
+
+  const sessions = LC.get('sessions');
+  sessions.push({ date:toDateStr(sessionStart), dHrs:dSec/3600 });
+  LC.set('sessions', sessions);
+
+  try {
+    await api({
+      action:'sessionSave',
+      startTime:sessionStart.toISOString(),
+      endTime:endTime.toISOString(),
+      durationSec:dSec,
+    });
+    document.getElementById('timer-status').textContent = 'saved — '+fmtMins(dSec);
+  } catch(e) {
+    document.getElementById('timer-status').textContent = 'queued for sync';
+  }
+  sessionStart = null;
+  updateStats();
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function updateStats() {
+  const sessions = LC.get('sessions');
+  const today    = toDateStr(new Date());
+  const mon      = getMondayStr();
+  const todaySec = sessions.filter(s=>s.date===today).reduce((a,s)=>a+s.dHrs*3600,0);
+  const weekSec  = sessions.filter(s=>s.date>=mon).reduce((a,s)=>a+s.dHrs*3600,0);
+  const cnt      = sessions.filter(s=>s.date===today).length;
+  document.getElementById('stat-today').textContent    = (todaySec/3600).toFixed(1)+' h';
+  document.getElementById('stat-sessions').textContent = cnt+(cnt===1?' session':' sessions');
+  document.getElementById('stat-week').textContent     = (weekSec/3600).toFixed(1)+' h';
+  const pct = Math.min(100,Math.round(weekSec/3600/39.5*100));
+  document.getElementById('week-bar').style.width      = pct+'%';
+  document.getElementById('week-pct').textContent      = pct+'% of target';
+}
+
+// ── Autocomplete ──────────────────────────────────────────────
+async function loadKeywords() {
+  try { const d=await apiCall({action:'keywordList'}); keywords=d.keywords||[]; } catch(e){}
+}
+
+function onTaskInput() {
+  const val = document.getElementById('task-input').value.trim().toLowerCase();
+  acIdx = -1;
+  if(!val){hideAc();return;}
+  const matches = keywords.filter(k=>k.toLowerCase().includes(val)).slice(0,7);
+  if(!matches.length){hideAc();return;}
+  const list = document.getElementById('ac-list');
+  list.innerHTML = matches.map((m,i)=>{
+    const idx=m.toLowerCase().indexOf(val);
+    const hi=m.slice(0,idx)+'<em>'+m.slice(idx,idx+val.length)+'</em>'+m.slice(idx+val.length);
+    return `<div class="ac-item" data-i="${i}" onmousedown="pickAc('${m.replace(/'/g,"\\'")}')">${hi}</div>`;
+  }).join('');
+  list.style.display='block';
+}
+
+function pickAc(val){ document.getElementById('task-input').value=val; hideAc(); }
+function hideAc(){ document.getElementById('ac-list').style.display='none'; acIdx=-1; }
+
+function onTaskKey(e) {
+  const items=document.querySelectorAll('.ac-item');
+  if(e.key==='ArrowDown'){e.preventDefault();acIdx=Math.min(acIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('sel',i===acIdx));}
+  else if(e.key==='ArrowUp'){e.preventDefault();acIdx=Math.max(acIdx-1,0);items.forEach((el,i)=>el.classList.toggle('sel',i===acIdx));}
+  else if(e.key==='Enter'){if(acIdx>=0&&items[acIdx]){e.preventDefault();pickAc(items[acIdx].textContent);}else{hideAc();saveTask();}}
+  else if(e.key==='Escape') hideAc();
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.ac-wrap')) hideAc(); });
+
+async function saveTask() {
+  const desc = document.getElementById('task-input').value.trim();
+  if(!desc){document.getElementById('task-input').focus();return;}
+  const guitarId = document.getElementById('task-guitar').value;
+  const now      = new Date();
+  const start    = lastTaskTime||now;
+  const dMin     = parseFloat(((now-start)/60000).toFixed(1));
+  lastTaskTime   = now;
+  document.getElementById('task-input').value='';
+  hideAc();
+  if(!keywords.includes(desc)) keywords.push(desc);
+  const tasks=LC.get('tasks');
+  tasks.push({date:toDateStr(now),name:desc,dMin,guitarId});
+  LC.set('tasks',tasks);
+  try {
+    await api({action:'taskSave',taskName:desc,guitarId,startTime:start.toISOString(),endTime:now.toISOString(),durationMin:dMin});
+  } catch(e) { /* queued */ }
+}
+
+// ── Guitars ───────────────────────────────────────────────────
+async function loadGuitars() {
+  try {
+    const d=await apiCall({action:'guitarList'});
+    guitars=d.guitars||[];
+    populateGuitarDropdown();
+  } catch(e){}
+}
+
+function populateGuitarDropdown() {
+  const sel=document.getElementById('task-guitar');
+  const active=guitars.filter(g=>g.status==='Active');
+  sel.innerHTML='<option value="">— select active guitar —</option>'+
+    active.map(g=>`<option value="${g.id}">${g.id} — ${g.customer}</option>`).join('');
+}
+
+function renderGuitars() {
+  const active  =guitars.filter(g=>g.status==='Active');
+  const finished=guitars.filter(g=>g.status==='Finished').slice(-5).reverse();
+  document.getElementById('guitar-active').innerHTML=active.length
+    ?active.map(g=>`
+      <div class="guitar-item">
+        <div class="guitar-info">
+          <div class="gname">${g.customer}</div>
+          <div class="gsub">${g.id} · ${g.model||'—'}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-active">Active</span>
+          <button class="btn btn-neutral btn-sm" style="margin:0" onclick="finishGuitar('${g.id}','${g.customer}')">Finish</button>
+        </div>
+      </div>`).join('')
+    :'<div class="empty">No active builds</div>';
+  document.getElementById('guitar-finished').innerHTML=finished.length
+    ?finished.map(g=>`
+      <div class="guitar-item">
+        <div class="guitar-info">
+          <div class="gname">${g.customer}</div>
+          <div class="gsub">${g.id} · ${g.model||'—'}</div>
+        </div>
+        <span class="badge badge-done">Finished</span>
+      </div>`).join('')
+    :'<div class="empty">None yet</div>';
+}
+
+function openNewGuitar() {
+  showModal(`
+    <span class="modal-close" onclick="closeModal()">×</span>
+    <div class="modal-title">New build</div>
+    <label>Customer</label><input type="text" id="ng-customer">
+    <label>Model</label><input type="text" id="ng-model">
+    <label>Top wood</label><input type="text" id="ng-top">
+    <label>Back & sides</label><input type="text" id="ng-back">
+    <label>Nr of frets</label><input type="number" id="ng-frets" placeholder="19">
+    <label>Fret markers</label><input type="text" id="ng-markers" placeholder="None / dots / custom">
+    <label>Tuning machines</label><input type="text" id="ng-tuning">
+    <label>Nut width (mm)</label><input type="number" id="ng-nut" placeholder="52">
+    <label>Neck thickness (mm)</label><input type="number" id="ng-neck" placeholder="21">
+    <label>Price (€)</label><input type="number" id="ng-price">
+    <label>Special notes</label><textarea id="ng-notes"></textarea>
+    <button class="btn btn-primary" onclick="submitNewGuitar()">Start build</button>
+  `);
+}
+
+async function submitNewGuitar() {
+  const customer=v('ng-customer');
+  if(!customer){alert('Customer name required');return;}
+  try {
+    const d=await api({action:'guitarNew',customer,model:v('ng-model'),topWood:v('ng-top'),
+      backSides:v('ng-back'),nrFrets:v('ng-frets'),fretMarkers:v('ng-markers'),
+      tuningMachines:v('ng-tuning'),nutWidth:v('ng-nut'),neckThickness:v('ng-neck'),
+      price:v('ng-price'),specialNotes:v('ng-notes')});
+    closeModal();
+    await loadGuitars();
+    renderGuitars();
+    alert('Build started: '+(d.id||'queued'));
+  } catch(e){alert('Error: '+e.message);}
+}
+
+async function finishGuitar(id,customer) {
+  if(!confirm(`Mark "${customer}" (${id}) as finished?`)) return;
+  try {
+    await api({action:'guitarFinish',guitarId:id});
+    await loadGuitars();
+    renderGuitars();
+    populateGuitarDropdown();
+  } catch(e){alert('Error: '+e.message);}
+}
+
+// ── ToDo ──────────────────────────────────────────────────────
+async function renderTodos() {
+  document.getElementById('todo-list').innerHTML='<div class="spin">Loading…</div>';
+  try {
+    const d=await apiCall({action:'todoList'});
+    const todos=d.todos||[];
+    if(!todos.length){
+      document.getElementById('todo-list').innerHTML='<div class="empty">All done — or add a task above</div>';
+      return;
+    }
+    document.getElementById('todo-list').innerHTML=todos.map(t=>`
+      <div class="todo-item" id="todo-${t.id}">
+        <div class="todo-check" onclick="doneTodo('${t.id}')">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+        </div>
+        <div>
+          <div class="todo-text">${t.task}</div>
+          <div class="todo-sub">${t.guitarId?t.guitarId+' · ':''}${t.dateCreated||''}</div>
+        </div>
+      </div>`).join('');
+  } catch(e){
+    document.getElementById('todo-list').innerHTML='<div class="empty">Could not load — check connection</div>';
+  }
+}
+
+async function doneTodo(id) {
+  const check=document.querySelector(`#todo-${id} .todo-check`);
+  if(check) check.classList.add('done');
+  try { await api({action:'todoDone',todoId:id}); setTimeout(()=>renderTodos(),600); }
+  catch(e){alert('Error: '+e.message);}
+}
+
+function openAddTodo() {
+  const active=guitars.filter(g=>g.status==='Active');
+  showModal(`
+    <span class="modal-close" onclick="closeModal()">×</span>
+    <div class="modal-title">Add to-do</div>
+    <label>Task</label><input type="text" id="td-task" placeholder="e.g. glue back bracing">
+    <label>Guitar (optional)</label>
+    <select id="td-guitar">
+      <option value="">— general task —</option>
+      ${active.map(g=>`<option value="${g.id}">${g.id} — ${g.customer}</option>`).join('')}
+    </select>
+    <button class="btn btn-primary" onclick="submitTodo()">Add task</button>
+  `);
+  setTimeout(()=>document.getElementById('td-task')&&document.getElementById('td-task').focus(),100);
+}
+
+async function submitTodo() {
+  const task=v('td-task'), guitarId=v('td-guitar');
+  if(!task){alert('Task description required');return;}
+  try { await api({action:'todoAdd',task,guitarId}); closeModal(); renderTodos(); }
+  catch(e){alert('Error: '+e.message);}
+}
+
+// ── Log ───────────────────────────────────────────────────────
+function renderLog() {
+  const sessions=LC.get('sessions').slice().reverse().slice(0,10);
+  const tasks   =LC.get('tasks').slice().reverse().slice(0,10);
+  document.getElementById('log-sessions').innerHTML=sessions.length
+    ?sessions.map(s=>`
+      <div class="log-item">
+        <div class="log-row">
+          <span class="log-title">${s.date}</span>
+          <span class="log-val ${s.dHrs>5?'flag-warn':''}">${s.dHrs.toFixed(1)} h${s.dHrs>5?' ⚠':''}</span>
+        </div>
+      </div>`).join('')
+    :'<div class="empty">No sessions yet</div>';
+  document.getElementById('log-tasks').innerHTML=tasks.length
+    ?tasks.map(t=>`
+      <div class="log-item">
+        <div class="log-row">
+          <span class="log-title">${t.name}</span>
+          <span class="log-val ${t.dMin>300?'flag-warn':''}">${fmtMins2(t.dMin)}${t.dMin>300?' ⚠':''}</span>
+        </div>
+        <div class="log-sub">${t.date}${t.guitarId?' · '+t.guitarId:''}</div>
+      </div>`).join('')
+    :'<div class="empty">No tasks yet</div>';
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function showModal(html){ document.getElementById('modal-body').innerHTML=html; document.getElementById('modal-wrap').classList.add('open'); }
+function closeModal(e){ if(e&&e.target!==document.getElementById('modal-wrap'))return; document.getElementById('modal-wrap').classList.remove('open'); }
+
+// ── Helpers ───────────────────────────────────────────────────
+function v(id){ return (document.getElementById(id)||{}).value||''; }
+function fmtTimer(sec){ return [Math.floor(sec/3600),Math.floor((sec%3600)/60),sec%60].map(n=>String(n).padStart(2,'0')).join(':'); }
+function fmtMins(sec){ return sec<3600?Math.round(sec/60)+'m':(sec/3600).toFixed(1)+'h'; }
+function fmtMins2(min){ return min<60?Math.round(min)+'m':(min/60).toFixed(1)+'h'; }
+function toDateStr(d){ return d.toISOString().slice(0,10); }
+function getMondayStr(){ const now=new Date(),dow=(now.getDay()+6)%7,mon=new Date(now); mon.setDate(now.getDate()-dow); return toDateStr(mon); }
+</script>
+</body>
+</html>
