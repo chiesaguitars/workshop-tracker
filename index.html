@@ -451,6 +451,7 @@ function renderGuitars() {
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <span class="badge badge-active">Active</span>
+          <button class="btn btn-primary btn-sm" style="margin:0" onclick="editGuitar(${JSON.stringify(g)})">Edit</button>
           <button class="btn btn-neutral btn-sm" style="margin:0" onclick="finishGuitar('${g.id}','${g.customer}')">Finish</button>
         </div>
       </div>`).join('')
@@ -498,6 +499,42 @@ async function submitNewGuitar() {
     await loadGuitars();
     renderGuitars();
     alert('Build started: '+(d.id||'queued'));
+  } catch(e){alert('Error: '+e.message);}
+}
+
+function editGuitar(g) {
+  showModal(`
+    <span class="modal-close" onclick="closeModal()">×</span>
+    <div class="modal-title">Edit — ${g.id}</div>
+    <label>Customer</label><input type="text" id="eg-customer" value="${g.customer||''}">
+    <label>Model</label><input type="text" id="eg-model" value="${g.model||''}">
+    <label>Top wood</label><input type="text" id="eg-top" value="${g.topWood||''}">
+    <label>Back & sides</label><input type="text" id="eg-back" value="${g.backSides||''}">
+    <label>Nr of frets</label><input type="number" id="eg-frets" value="${g.nrFrets||''}">
+    <label>Fret markers</label><input type="text" id="eg-markers" value="${g.fretMarkers||''}">
+    <label>Tuning machines</label><input type="text" id="eg-tuning" value="${g.tuningMachines||''}">
+    <label>Nut width (mm)</label><input type="number" id="eg-nut" value="${g.nutWidth||''}">
+    <label>Neck thickness (mm)</label><input type="number" id="eg-neck" value="${g.neckThickness||''}">
+    <label>Price (€)</label><input type="number" id="eg-price" value="${g.price||''}">
+    <label>Special notes</label><textarea id="eg-notes">${g.specialNotes||''}</textarea>
+    <input type="hidden" id="eg-id" value="${g.id}">
+    <button class="btn btn-primary" onclick="submitEditGuitar()">Save changes</button>
+  `);
+}
+
+async function submitEditGuitar() {
+  const id=v('eg-id');
+  const customer=v('eg-customer');
+  if(!customer){alert('Customer name required');return;}
+  try {
+    await api({action:'guitarUpdate',guitarId:id,customer,model:v('eg-model'),
+      topWood:v('eg-top'),backSides:v('eg-back'),nrFrets:v('eg-frets'),
+      fretMarkers:v('eg-markers'),tuningMachines:v('eg-tuning'),
+      nutWidth:v('eg-nut'),neckThickness:v('eg-neck'),
+      price:v('eg-price'),specialNotes:v('eg-notes')});
+    closeModal();
+    await loadGuitars();
+    renderGuitars();
   } catch(e){alert('Error: '+e.message);}
 }
 
