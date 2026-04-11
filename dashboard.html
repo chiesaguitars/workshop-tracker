@@ -358,7 +358,7 @@ function buildTimeline(rangeDays){
   builds.forEach(b=>{
     const si=days.indexOf(b.startOffset);
     if(si>=0){const sd=new Date(now);sd.setDate(now.getDate()+b.startOffset);startPts.push({x:si,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(sd))});}
-    if(b.endOffset!==null){const ei=days.indexOf(b.endOffset);if(ei>=0){const ed=new Date(now);ed.setDate(now.getDate()+b.endOffset);endPts.push({x:ei,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(ed));}}
+    if(b.endOffset!==null){const ei=days.indexOf(b.endOffset);if(ei>=0){const ed=new Date(now);ed.setDate(now.getDate()+b.endOffset);endPts.push({x:ei,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(ed))});
     }
   });
 
