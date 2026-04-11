@@ -1,4 +1,4 @@
-const CACHE = 'workshop-v1';
+const CACHE = 'workshop-v3';
 const ASSETS = [
   '/workshop-tracker/',
   '/workshop-tracker/index.html',
