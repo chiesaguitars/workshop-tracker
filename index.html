@@ -319,9 +319,22 @@ function showScreen(name, btn) {
 }
 
 // ── API ───────────────────────────────────────────────────────
+const READ_ACTIONS = new Set(['keywordList','guitarList','todoList','sessionList','taskList']);
+
 async function apiCall(params) {
-  const url = API + '?' + new URLSearchParams(params).toString();
-  const res = await fetch(url);
+  const isRead = READ_ACTIONS.has(params.action);
+  let res;
+  if(isRead) {
+    const url = API + '?' + new URLSearchParams(params).toString();
+    res = await fetch(url);
+  } else {
+    // POST for all write operations — avoids URL encoding issues and redirect param loss
+    res = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify(params),
+      headers: {'Content-Type': 'application/json'},
+    });
+  }
   const data = await res.json();
   if(!data.ok) throw new Error(data.error||'API error');
   return data;
