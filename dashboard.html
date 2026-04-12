@@ -245,12 +245,16 @@ async function loadAll() {
     allGuitars  = gd.guitars||[];
   } catch(e) {
     allSessions=[]; allTasks=[]; allGuitars=[];
+    console.error('loadAll failed:', e);
+    document.querySelectorAll('.spin').forEach(el=>{
+      el.textContent='Could not load data — check connection and try refreshing';
+    });
   }
-  buildTimeline(currentTLRange);
-  buildHoursAnalysis();
-  buildWeekdayChart(currentWDRange);
-  buildHeatmap();
-  buildGuitarProduction();
+  try{buildTimeline(currentTLRange);}catch(e){console.error('Timeline:',e);}
+  try{buildHoursAnalysis();}catch(e){console.error('Hours:',e);}
+  try{buildWeekdayChart(currentWDRange);}catch(e){console.error('Weekday:',e);}
+  try{buildHeatmap();}catch(e){console.error('Heatmap:',e);}
+  try{buildGuitarProduction();}catch(e){console.error('Guitars:',e);}
 }
 
 loadAll();
@@ -295,9 +299,7 @@ function buildDayMap(sessions){
 // ── 1. TIMELINE ───────────────────────────────────────────────
 function setTLRange(days,btn){
   currentTLRange=days;
-  document.querySelectorAll('#wd-controls .ctrl-btn, .ctrl-btn').forEach(b=>{
-    if(b.closest('.controls')===btn.closest('.controls')) b.classList.remove('active');
-  });
+  btn.closest('.controls').querySelectorAll('.ctrl-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   buildTimeline(days);
 }
@@ -358,8 +360,7 @@ function buildTimeline(rangeDays){
   builds.forEach(b=>{
     const si=days.indexOf(b.startOffset);
     if(si>=0){const sd=new Date(now);sd.setDate(now.getDate()+b.startOffset);startPts.push({x:si,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(sd))});}
-    if(b.endOffset!==null){const ei=days.indexOf(b.endOffset);if(ei>=0){const ed=new Date(now);ed.setDate(now.getDate()+b.endOffset);endPts.push({x:ei,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(ed))});
-    }
+    if(b.endOffset!==null){const ei=days.indexOf(b.endOffset);if(ei>=0){const ed=new Date(now);ed.setDate(now.getDate()+b.endOffset);endPts.push({x:ei,y:b.lane+1,customer:b.customer,date:fmtDate(toDateStr(ed))});}}
   });
 
   const tip=document.getElementById('tl-tip');

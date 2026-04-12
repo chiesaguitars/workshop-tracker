@@ -220,11 +220,12 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('hdr-date').textContent =
     new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   updateOnlineStatus();
-  loadKeywords();
-  loadGuitars();
   updateStats();
   flushQueue();
   restoreTimer();
+  // Clear legacy cache formats
+  localStorage.removeItem('guitars_cache');
+  loadAppData();
   if('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').then(reg => {
       reg.addEventListener('updatefound', () => {
@@ -239,6 +240,31 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+async function loadAppData() {
+  // Always fetch fresh from API — never trust stale cache for guitar fields
+  try {
+    const [kd, gd] = await Promise.all([
+      apiCall({action:'keywordList'}),
+      apiCall({action:'guitarList'}),
+    ]);
+    keywords = kd.keywords || [];
+    guitars  = gd.guitars  || [];
+    populateGuitarDropdown();
+    LC.set('guitars_cache', JSON.stringify(guitars));
+  } catch(e) {
+    // Offline fallback
+    try {
+      const cached = JSON.parse(localStorage.getItem('guitars_cache')||'[]');
+      if(cached.length) { guitars=cached; populateGuitarDropdown(); }
+    } catch(e2){}
+  }
+  // Load todos in background — not critical for timer screen
+  try {
+    const td = await apiCall({action:'todoList'});
+    LC.set('todos_cache', td.todos||[]);
+  } catch(e) {}
+}
 
 function restoreTimer() {
   const saved = localStorage.getItem('sessionStart');
@@ -383,9 +409,7 @@ function updateStats() {
 }
 
 // ── Autocomplete ──────────────────────────────────────────────
-async function loadKeywords() {
-  try { const d=await apiCall({action:'keywordList'}); keywords=d.keywords||[]; } catch(e){}
-}
+
 
 function onTaskInput() {
   const val = document.getElementById('task-input').value.trim().toLowerCase();
@@ -434,13 +458,7 @@ async function saveTask() {
 }
 
 // ── Guitars ───────────────────────────────────────────────────
-async function loadGuitars() {
-  try {
-    const d=await apiCall({action:'guitarList'});
-    guitars=d.guitars||[];
-    populateGuitarDropdown();
-  } catch(e){}
-}
+
 
 function populateGuitarDropdown() {
   const sel=document.getElementById('task-guitar');
@@ -510,7 +528,7 @@ async function submitNewGuitar() {
       tuningMachines:v('ng-tuning'),nutWidth:v('ng-nut'),neckThickness:v('ng-neck'),
       price:v('ng-price'),specialNotes:v('ng-notes')});
     closeModal();
-    await loadGuitars();
+    await loadAppData();
     renderGuitars();
     alert('Build started: '+(d.id||'queued'));
   } catch(e){alert('Error: '+e.message);}
@@ -549,7 +567,7 @@ async function submitEditGuitar() {
       nutWidth:v('eg-nut'),neckThickness:v('eg-neck'),
       price:v('eg-price'),specialNotes:v('eg-notes')});
     closeModal();
-    await loadGuitars();
+    await loadAppData();
     renderGuitars();
   } catch(e){alert('Error: '+e.message);}
 }
@@ -558,22 +576,33 @@ async function finishGuitar(id,customer) {
   if(!confirm(`Mark "${customer}" (${id}) as finished?`)) return;
   try {
     await api({action:'guitarFinish',guitarId:id});
-    await loadGuitars();
+    await loadAppData();
     renderGuitars();
-    populateGuitarDropdown();
   } catch(e){alert('Error: '+e.message);}
 }
 
 // ── ToDo ──────────────────────────────────────────────────────
 async function renderTodos() {
-  document.getElementById('todo-list').innerHTML='<div class="spin">Loading…</div>';
+  // Show cached todos immediately, then refresh
+  const cached=LC.get('todos_cache');
+  if(cached.length) _renderTodoList(cached);
+  else document.getElementById('todo-list').innerHTML='<div class="spin">Loading…</div>';
   try {
     const d=await apiCall({action:'todoList'});
     const todos=d.todos||[];
+    LC.set('todos_cache',todos);
     if(!todos.length){
       document.getElementById('todo-list').innerHTML='<div class="empty">All done — or add a task above</div>';
       return;
     }
+    _renderTodoList(todos);
+  } catch(e){
+    if(!cached.length) document.getElementById('todo-list').innerHTML='<div class="empty">Could not load — check connection</div>';
+  }
+}
+
+function _renderTodoList(todos) {
+    if(!todos.length){document.getElementById('todo-list').innerHTML='<div class="empty">All done — or add a task above</div>';return;}
     document.getElementById('todo-list').innerHTML=todos.map(t=>`
       <div class="todo-item" id="todo-${t.id}">
         <div class="todo-check" onclick="doneTodo('${t.id}')">
@@ -584,9 +613,6 @@ async function renderTodos() {
           <div class="todo-sub">${t.guitarId?t.guitarId+' · ':''}${t.dateCreated||''}</div>
         </div>
       </div>`).join('');
-  } catch(e){
-    document.getElementById('todo-list').innerHTML='<div class="empty">Could not load — check connection</div>';
-  }
 }
 
 async function doneTodo(id) {
