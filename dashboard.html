@@ -227,31 +227,48 @@ document.getElementById('hdr-date').textContent =
   new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
 async function apiGet(action) {
-  const res = await fetch(API+'?action='+encodeURIComponent(action), {redirect:'follow'});
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  const text = await res.text();
-  let d;
-  try { d = JSON.parse(text); } catch(e) { throw new Error('Bad response: '+text.slice(0,80)); }
-  if(!d.ok) throw new Error(d.error||'API error');
-  return d;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  try {
+    const res = await fetch(API+'?action='+encodeURIComponent(action), {
+      redirect: 'follow',
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    let d;
+    try { d = JSON.parse(text); } catch(e) { throw new Error('Bad response: '+text.slice(0,80)); }
+    if(!d.ok) throw new Error(d.error||'API error');
+    return d;
+  } catch(e) {
+    clearTimeout(timeout);
+    throw e;
+  }
+}
+
+function setStatus(msg) {
+  document.querySelectorAll('.spin').forEach(el=>{ el.textContent=msg; });
 }
 
 async function loadAll() {
   try {
-    const [sd,td,gd] = await Promise.all([
-      apiGet('sessionList'),
-      apiGet('taskList'),
-      apiGet('guitarList'),
-    ]);
+    setStatus('Loading sessions…');
+    const sd = await apiGet('sessionList');
     allSessions = sd.sessions||[];
-    allTasks    = td.tasks||[];
-    allGuitars  = gd.guitars||[];
+
+    setStatus('Loading guitars…');
+    const gd = await apiGet('guitarList');
+    allGuitars = gd.guitars||[];
+
+    setStatus('Loading tasks…');
+    const td = await apiGet('taskList');
+    allTasks = td.tasks||[];
+
   } catch(e) {
     allSessions=[]; allTasks=[]; allGuitars=[];
-    console.error('loadAll failed:', String(e));
-    document.querySelectorAll('.spin').forEach(el=>{
-      el.textContent='Could not load — ' + String(e);
-    });
+    setStatus('Could not load — ' + (e.name==='AbortError'?'request timed out (Apps Script slow to respond — try refreshing)':String(e)));
+    console.error('loadAll:', e);
     return;
   }
   try{buildTimeline(currentTLRange);}catch(e){console.error('Timeline:',e);}
