@@ -227,9 +227,11 @@ document.getElementById('hdr-date').textContent =
   new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
 async function apiGet(action) {
-  const res = await fetch(API+'?action='+encodeURIComponent(action));
+  const res = await fetch(API+'?action='+encodeURIComponent(action), {redirect:'follow'});
   if(!res.ok) throw new Error('HTTP '+res.status);
-  const d = await res.json();
+  const text = await res.text();
+  let d;
+  try { d = JSON.parse(text); } catch(e) { throw new Error('Bad response: '+text.slice(0,80)); }
   if(!d.ok) throw new Error(d.error||'API error');
   return d;
 }
