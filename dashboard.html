@@ -299,13 +299,18 @@ function parseDateTime(dateStr, timeStr){
   const d=parseDate(dateStr);
   if(!d||isNaN(d)) return null;
   if(!timeStr) return d;
-  const parts=String(timeStr).split(':');
-  if(parts.length>=2){
-    // Build fresh local Date — avoids any residual UTC offset on d
-    return new Date(d.getFullYear(),d.getMonth(),d.getDate(),
-      parseInt(parts[0])||0,parseInt(parts[1])||0,parseInt(parts[2])||0);
+  const s=String(timeStr);
+  let h=0,m=0,sec=0;
+  if(s.includes('1899')||s.includes('T')){
+    // Google Sheets time epoch: "1899-12-31T07:30:00.000Z" — read UTC time
+    const t=new Date(s);
+    h=t.getUTCHours(); m=t.getUTCMinutes(); sec=t.getUTCSeconds();
+  } else {
+    // Plain "HH:mm:ss" string
+    const parts=s.split(':');
+    h=parseInt(parts[0])||0; m=parseInt(parts[1])||0; sec=parseInt(parts[2])||0;
   }
-  return d;
+  return new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m,sec);
 }
 function toDateStr(d){ return d.toISOString().slice(0,10); }
 function daysBetween(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
