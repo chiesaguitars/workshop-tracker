@@ -554,11 +554,25 @@ function buildWeekdayChart(rangeDays){
 
 // ── 4. HEATMAP ────────────────────────────────────────────────
 function buildHeatmap(){
+  // DEBUG: Log sample sessions to verify parsing
+  console.log('Heatmap debug:', {
+    sessionCount: allSessions.length,
+    sample: allSessions.slice(0, 5).map(s => ({
+      date: s.date,
+      start: s.startTime,
+      end: s.endTime,
+      durationHrs: s.durationHrs
+    }))
+  });
+
   // Hours 7–20, Mon–Fri only
   const HOURS=Array.from({length:14},(_,i)=>i+7); // 7,8,...,20
   const DAYS=5; // Mon=0 ... Fri=4
-  // grid[dow][hour] = {total, count}
-  const grid=Array.from({length:DAYS},()=>Array.from({length:HOURS.length},()=>({total:0,count:0})));
+  
+  // FIXED: grid[dow][hour] = {total, days: Set} to track unique dates
+  const grid=Array.from({length:DAYS},()=>
+    Array.from({length:HOURS.length},()=>({total:0, days:new Set()}))
+  );
 
   allSessions.forEach(s=>{
     const d=parseDate(s.date);
@@ -572,8 +586,7 @@ function buildHeatmap(){
     if(!start||!end||isNaN(start)||isNaN(end)) return;
     if(end<=start) return;
 
-    const totalSec=(end-start)/1000;
-    const totalHrs=totalSec/3600;
+    const dateKey = toDateStr(d); // Track unique date for this slot
 
     // Distribute hours across each slot this session covers
     HOURS.forEach((h,hi)=>{
@@ -585,7 +598,7 @@ function buildHeatmap(){
       if(overlapEnd>overlapStart){
         const overlapHrs=(overlapEnd-overlapStart)/3600000;
         grid[dow][hi].total+=overlapHrs;
-        grid[dow][hi].count++;
+        grid[dow][hi].days.add(dateKey); // FIXED: add unique date, not increment count
       }
     });
   });
@@ -619,10 +632,19 @@ function buildHeatmap(){
     const label=h+':00';
     html+=`<div class="hm-row"><div class="hm-label">${label}</div>`;
     for(let dow=0;dow<DAYS;dow++){
-      const val=grid[dow][hi].total;
-      const avg=grid[dow][hi].count?val/grid[dow][hi].count:0;
-      const tip=val>0?`${DAY_NAMES_FULL[dow]} ${label}: avg ${avg.toFixed(1)}h over ${grid[dow][hi].count} days`:`${DAY_NAMES_FULL[dow]} ${label}: no data`;
-      html+=`<div class="hm-cell" style="background:${cellColor(val)}" title="${tip}"></div>`;
+      const cell = grid[dow][hi];
+      const dayCount = cell.days.size; // FIXED: use unique day count
+      const avg = dayCount ? cell.total / dayCount : 0;
+      
+      // Color by TOTAL hours (original design) — change to 'avg' if preferred
+      const displayVal = cell.total;
+      
+      // FIXED: Tooltip now correctly references "days" not "sessions"
+      const tip = cell.total > 0 
+        ? `${DAY_NAMES_FULL[dow]} ${label}: avg ${avg.toFixed(1)}h over ${dayCount} day${dayCount===1?'':'s'}` 
+        : `${DAY_NAMES_FULL[dow]} ${label}: no data`;
+      
+      html+=`<div class="hm-cell" style="background:${cellColor(displayVal)}" title="${tip}"></div>`;
     }
     html+='</div>';
   });
