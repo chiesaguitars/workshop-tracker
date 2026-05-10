@@ -227,24 +227,21 @@ document.getElementById('hdr-date').textContent =
   new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
 async function apiGet(action) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-  try {
-    const res = await fetch(API+'?action='+encodeURIComponent(action), {
-      redirect: 'follow',
-      signal: controller.signal
+  const fetchPromise = fetch(API+'?action='+encodeURIComponent(action), {redirect:'follow'})
+    .then(res => {
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      return res.text();
+    })
+    .then(text => {
+      let d;
+      try { d = JSON.parse(text); } catch(e) { throw new Error('Bad response: '+text.slice(0,80)); }
+      if(!d.ok) throw new Error(d.error||'API error');
+      return d;
     });
-    clearTimeout(timeout);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const text = await res.text();
-    let d;
-    try { d = JSON.parse(text); } catch(e) { throw new Error('Bad response: '+text.slice(0,80)); }
-    if(!d.ok) throw new Error(d.error||'API error');
-    return d;
-  } catch(e) {
-    clearTimeout(timeout);
-    throw e;
-  }
+  const timeoutPromise = new Promise((_,reject) =>
+    setTimeout(() => reject(new Error('request timed out (Apps Script slow to respond — try refreshing)')), 30000)
+  );
+  return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 function setStatus(msg) {
@@ -289,7 +286,13 @@ function fmtDate(str){
 }
 function parseDate(str){
   if(!str) return null;
-  if(str.includes('/')){const [d,m,y]=str.split('/');return new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`);}
+  if(str.includes('/')){
+    const [d,m,y]=str.split('/');
+    return new Date(parseInt(y),parseInt(m)-1,parseInt(d));
+  }
+  // ISO string: parse as local, not UTC (new Date('YYYY-MM-DD') is UTC midnight)
+  const parts=str.split('-');
+  if(parts.length===3) return new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
   return new Date(str);
 }
 function parseDateTime(dateStr, timeStr){
@@ -297,7 +300,11 @@ function parseDateTime(dateStr, timeStr){
   if(!d||isNaN(d)) return null;
   if(!timeStr) return d;
   const parts=String(timeStr).split(':');
-  if(parts.length>=2){d.setHours(parseInt(parts[0])||0,parseInt(parts[1])||0,parseInt(parts[2])||0);}
+  if(parts.length>=2){
+    // Build fresh local Date — avoids any residual UTC offset on d
+    return new Date(d.getFullYear(),d.getMonth(),d.getDate(),
+      parseInt(parts[0])||0,parseInt(parts[1])||0,parseInt(parts[2])||0);
+  }
   return d;
 }
 function toDateStr(d){ return d.toISOString().slice(0,10); }
