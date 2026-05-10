@@ -277,24 +277,22 @@ async function loadAll() {
 
 loadAll();
 
-// ── Helpers ───────────────────────────────────────────────────
+// ── Helpers (Local Timezone Safe) ─────────────────────────────
 function fmtMins(min){ return min<60?Math.round(min)+'m':(min/60).toFixed(1)+'h'; }
-function fmtDate(str){
-  if(!str) return '—';
-  const d=parseDate(str);
-  return d&&!isNaN(d)?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):str;
-}
+
 function parseDate(str){
   if(!str) return null;
+  // Apps Script returns dd/MM/yyyy
   if(str.includes('/')){
     const [d,m,y]=str.split('/');
     return new Date(parseInt(y),parseInt(m)-1,parseInt(d));
   }
-  // ISO string: parse as local, not UTC (new Date('YYYY-MM-DD') is UTC midnight)
+  // Fallback for ISO YYYY-MM-DD
   const parts=str.split('-');
   if(parts.length===3) return new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
   return new Date(str);
 }
+
 function parseDateTime(dateStr, timeStr){
   const d=parseDate(dateStr);
   if(!d||isNaN(d)) return null;
@@ -307,8 +305,7 @@ function parseDateTime(dateStr, timeStr){
   return d;
 }
 
-// FIXED: toDateStr now returns Local YYYY-MM-DD, not UTC
-// Previously used toISOString() which shifted dates backwards by 1-2 days
+// FIXED: Returns local YYYY-MM-DD (never uses toISOString())
 function toDateStr(d){
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -316,11 +313,16 @@ function toDateStr(d){
   return `${y}-${m}-${day}`;
 }
 
+function fmtDate(str){
+  if(!str) return '—';
+  const d=parseDate(str);
+  return d&&!isNaN(d)?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):str;
+}
+
 function daysBetween(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
 function getMondayOf(d){ const dow=(d.getDay()+6)%7,m=new Date(d); m.setDate(d.getDate()-dow); m.setHours(0,0,0,0); return m; }
 function cutoffDate(days){ if(!days) return null; const d=new Date(); d.setDate(d.getDate()-days); return d; }
 
-// Build daily hours map from sessions
 function buildDayMap(sessions){
   const m={};
   sessions.forEach(s=>{
@@ -345,7 +347,7 @@ function assignLanes(builds){
   builds.forEach(b=>{
     let placed=false;
     for(let l=0;l<lanes.length;l++){
-      if(lanes[l].endOffset!==null&&b.startOffset>lanes[l].endOffset){
+      if(lanes[l].endOffset!==null && b.startOffset > lanes[l].endOffset){
         lanes[l]=b;b.lane=l;placed=true;break;
       }
     }
@@ -367,12 +369,12 @@ function buildTimeline(rangeDays){
 
   const builds=allGuitars.map(g=>{
     const start=g.dateStarted?parseDate(g.dateStarted):null;
-    const end  =g.dateFinished?parseDate(g.dateFinished):null;
+    const end=g.dateFinished?parseDate(g.dateFinished):null;
     if(!start||isNaN(start)) return null;
     const startOff=daysBetween(now,start);
-    const endOff  =end&&!isNaN(end)?daysBetween(now,end):null;
+    const endOff=end&&!isNaN(end)?daysBetween(now,end):null;
     if(startOff>0) return null;
-    if(endOff!==null&&endOff<-rangeDays+1) return null;
+    if(endOff!==null && endOff<-rangeDays+1) return null;
     return {customer:g.customer,model:g.model,startOffset:startOff,endOffset:endOff,lane:0};
   }).filter(Boolean);
 
@@ -497,7 +499,7 @@ function buildHoursAnalysis(){
   });
 }
 
-// ─ 3. AVERAGE BY WEEKDAY ─────────────────────────────────────
+// ── 3. AVERAGE BY WEEKDAY ─────────────────────────────────────
 function setWDRange(days,btn){
   currentWDRange=days;
   btn.closest('.controls').querySelectorAll('.ctrl-btn').forEach(b=>b.classList.remove('active'));
@@ -513,9 +515,8 @@ function buildWeekdayChart(rangeDays){
     return d&&!isNaN(d)&&d>=cutoff;
   });
 
-  // For each weekday (0=Mon..6=Sun), accumulate total hours and count of days
   const totals=Array(7).fill(0), counts=Array(7).fill(0);
-  const seen={}; // track unique dates per weekday to get day count
+  const seen={};
 
   filtered.forEach(s=>{
     const d=parseDate(s.date);
@@ -527,7 +528,7 @@ function buildWeekdayChart(rangeDays){
   });
 
   const avgs=totals.map((t,i)=>counts[i]?parseFloat((t/counts[i]).toFixed(2)):0);
-  const colors=DAY_NAMES.map((_,i)=>i<5?'#85B7EB':'#D3D1C7'); // blue weekdays, grey weekends
+  const colors=DAY_NAMES.map((_,i)=>i<5?'#85B7EB':'#D3D1C7');
 
   if(wdChart) wdChart.destroy();
   wdChart=new Chart(document.getElementById('wdChart'),{
@@ -563,105 +564,75 @@ function buildWeekdayChart(rangeDays){
 
 // ── 4. HEATMAP ────────────────────────────────────────────────
 function buildHeatmap(){
-  // Hours 7–20, Mon–Fri only
-  const HOURS=Array.from({length:14},(_,i)=>i+7); // 7,8,...,20
-  const DAYS=5; // Mon=0 ... Fri=4
-  
-  // FIXED: grid[dow][hour] = {total, days: Set} to track unique dates
-  const grid=Array.from({length:DAYS},()=>
-    Array.from({length:HOURS.length},()=>({total:0, days:new Set()}))
-  );
+  const HOURS=Array.from({length:14},(_,i)=>i+7); // 7..20
+  const DAYS=5; // Mon=0..Fri=4
+  const grid=Array.from({length:DAYS},()=>Array.from({length:HOURS.length},()=>({total:0, days:new Set()})));
 
   allSessions.forEach(s=>{
     const d=parseDate(s.date);
     if(!d||isNaN(d)) return;
     const dow=(d.getDay()+6)%7;
-    if(dow>=5) return; // skip weekends
+    if(dow>=5) return; // Skip weekends
 
-    // Parse start/end times
-    let start=parseDateTime(s.date, s.startTime);
-    let end  =parseDateTime(s.date, s.endTime);
-    if(!start||!end||isNaN(start)||isNaN(end)) return;
-    if(end<=start) return;
+    const start=parseDateTime(s.date, s.startTime);
+    const end  =parseDateTime(s.date, s.endTime);
+    if(!start||!end||isNaN(start)||isNaN(end)||end<=start) return;
 
-    // FIXED: Use Local Date Key to match Sheet data
     const dateKey = toDateStr(d);
 
-    // Distribute hours across each slot this session covers
     HOURS.forEach((h,hi)=>{
       const slotStart=new Date(d); slotStart.setHours(h,0,0,0);
       const slotEnd  =new Date(d); slotEnd.setHours(h+1,0,0,0);
-      // overlap between session and slot
-      const overlapStart=Math.max(start.getTime(),slotStart.getTime());
-      const overlapEnd  =Math.min(end.getTime(),slotEnd.getTime());
-      if(overlapEnd>overlapStart){
-        const overlapHrs=(overlapEnd-overlapStart)/3600000;
-        grid[dow][hi].total+=overlapHrs;
-        grid[dow][hi].days.add(dateKey); // FIXED: add unique date, not increment count
+      const oStart=Math.max(start.getTime(),slotStart.getTime());
+      const oEnd  =Math.min(end.getTime(),slotEnd.getTime());
+      
+      if(oEnd>oStart){
+        grid[dow][hi].total+=(oEnd-oStart)/3600000;
+        grid[dow][hi].days.add(dateKey);
       }
     });
   });
 
-  // Find max value for colour scaling
   let maxVal=0;
-  grid.forEach(row=>row.forEach(cell=>{if(cell.total>maxVal)maxVal=cell.total;}));
+  grid.forEach(row=>row.forEach(c=>{if(c.total>maxVal)maxVal=c.total;}));
   if(maxVal===0) maxVal=1;
 
-  // Colour scale: white → teal
   function cellColor(val){
     if(val===0) return 'var(--bg3)';
-    const intensity=val/maxVal;
-    // interpolate from #e1f5ee (teal-50) to #085041 (teal-800)
-    const r=Math.round(225+(8-225)*intensity);
-    const g=Math.round(245+(80-245)*intensity);
-    const b=Math.round(238+(65-238)*intensity);
+    const t=val/maxVal;
+    // High-contrast Teal: #b2dfdb -> #004d40
+    const r=Math.round(178+(0-178)*t);
+    const g=Math.round(223+(77-223)*t);
+    const b=Math.round(219+(64-219)*t);
     return `rgb(${r},${g},${b})`;
   }
 
   const dayLabels=['Mon','Tue','Wed','Thu','Fri'];
-
-  let html='<div class="heatmap-wrap"><div class="heatmap">';
-  // Header row (day names)
-  html+='<div class="hm-header">';
-  dayLabels.forEach(d=>{html+=`<div class="hm-header-cell">${d}</div>`;});
+  let html='<div class="heatmap-wrap"><div class="heatmap"><div class="hm-header">';
+  dayLabels.forEach(d=>html+=`<div class="hm-header-cell">${d}</div>`);
   html+='</div>';
 
-  // Hour rows
   HOURS.forEach((h,hi)=>{
-    const label=h+':00';
-    html+=`<div class="hm-row"><div class="hm-label">${label}</div>`;
+    html+=`<div class="hm-row"><div class="hm-label">${h}:00</div>`;
     for(let dow=0;dow<DAYS;dow++){
-      const cell = grid[dow][hi];
-      const dayCount = cell.days.size; // FIXED: use unique day count
-      const avg = dayCount ? cell.total / dayCount : 0;
-      
-      // Color by TOTAL hours (original design)
-      const displayVal = cell.total;
-      
-      // FIXED: Tooltip now correctly references "days" not "sessions"
-      const tip = cell.total > 0 
-        ? `${DAY_NAMES_FULL[dow]} ${label}: avg ${avg.toFixed(1)}h over ${dayCount} day${dayCount===1?'':'s'}` 
-        : `${DAY_NAMES_FULL[dow]} ${label}: no data`;
-      
-      html+=`<div class="hm-cell" style="background:${cellColor(displayVal)}" title="${tip}"></div>`;
+      const c=grid[dow][hi];
+      const cnt=c.days.size;
+      const avg=cnt?c.total/cnt:0;
+      const tip=c.total>0?`${DAY_NAMES_FULL[dow]} ${h}:00: avg ${avg.toFixed(1)}h over ${cnt} day${cnt===1?'':'s'}`:`${DAY_NAMES_FULL[dow]} ${h}:00: no data`;
+      html+=`<div class="hm-cell" style="background:${cellColor(c.total)}" title="${tip}"></div>`;
     }
     html+='</div>';
   });
 
-  html+='</div>';
-
-  // Legend
-  html+='<div class="hm-legend"><span>Less</span><div class="hm-legend-cells">';
+  html+='</div><div class="hm-legend"><span>Less</span><div class="hm-legend-cells">';
   [0,.2,.4,.6,.8,1].forEach(v=>{
-    const intensity=v;
-    const r=Math.round(225+(8-225)*intensity);
-    const g=Math.round(245+(80-245)*intensity);
-    const b=Math.round(238+(65-238)*intensity);
+    const t=v;
+    const r=Math.round(178+(0-178)*t);
+    const g=Math.round(223+(77-223)*t);
+    const b=Math.round(219+(64-219)*t);
     html+=`<div class="hm-legend-cell" style="background:${v===0?'var(--bg3)':`rgb(${r},${g},${b})`}"></div>`;
   });
-  html+='</div><span>More</span></div>';
-  html+='</div>';
-
+  html+='</div><span>More</span></div></div>';
   document.getElementById('heatmap-container').innerHTML=html;
 }
 
@@ -704,15 +675,22 @@ function searchOps(){
   const table=document.getElementById('op-table');
   const empty=document.getElementById('op-empty');
   const stats=document.getElementById('op-stats');
-  if(!matches.length){table.style.display='none';stats.style.display='none';empty.textContent='No results for "'+q+'"';empty.style.display='block';return;}
+  
+  if(!matches.length){
+    table.style.display='none';stats.style.display='none';
+    empty.textContent='No results for "'+q+'"';empty.style.display='block';return;
+  }
+  
   const durations=matches.map(t=>parseFloat(t.durationMin)||0).filter(d=>d>0&&d<=300);
   const avg=durations.length?durations.reduce((a,b)=>a+b,0)/durations.length:0;
   const min=durations.length?Math.min(...durations):0;
   const max=durations.length?Math.max(...durations):0;
+  
   document.getElementById('op-avg').textContent=fmtMins(avg);
   document.getElementById('op-min').textContent=fmtMins(min);
   document.getElementById('op-max').textContent=fmtMins(max);
   stats.style.display='grid';
+  
   document.getElementById('op-tbody').innerHTML=matches.map(t=>`
     <tr>
       <td>${fmtDate(t.date)}</td><td>${t.taskName}</td><td>${t.guitarId||'—'}</td>
