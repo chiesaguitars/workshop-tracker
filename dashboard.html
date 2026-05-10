@@ -306,7 +306,16 @@ function parseDateTime(dateStr, timeStr){
   }
   return d;
 }
-function toDateStr(d){ return d.toISOString().slice(0,10); }
+
+// FIXED: toDateStr now returns Local YYYY-MM-DD, not UTC
+// Previously used toISOString() which shifted dates backwards by 1-2 days
+function toDateStr(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function daysBetween(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
 function getMondayOf(d){ const dow=(d.getDay()+6)%7,m=new Date(d); m.setDate(d.getDate()-dow); m.setHours(0,0,0,0); return m; }
 function cutoffDate(days){ if(!days) return null; const d=new Date(); d.setDate(d.getDate()-days); return d; }
@@ -488,7 +497,7 @@ function buildHoursAnalysis(){
   });
 }
 
-// ── 3. AVERAGE BY WEEKDAY ─────────────────────────────────────
+// ─ 3. AVERAGE BY WEEKDAY ─────────────────────────────────────
 function setWDRange(days,btn){
   currentWDRange=days;
   btn.closest('.controls').querySelectorAll('.ctrl-btn').forEach(b=>b.classList.remove('active'));
@@ -554,17 +563,6 @@ function buildWeekdayChart(rangeDays){
 
 // ── 4. HEATMAP ────────────────────────────────────────────────
 function buildHeatmap(){
-  // DEBUG: Log sample sessions to verify parsing
-  console.log('Heatmap debug:', {
-    sessionCount: allSessions.length,
-    sample: allSessions.slice(0, 5).map(s => ({
-      date: s.date,
-      start: s.startTime,
-      end: s.endTime,
-      durationHrs: s.durationHrs
-    }))
-  });
-
   // Hours 7–20, Mon–Fri only
   const HOURS=Array.from({length:14},(_,i)=>i+7); // 7,8,...,20
   const DAYS=5; // Mon=0 ... Fri=4
@@ -586,7 +584,8 @@ function buildHeatmap(){
     if(!start||!end||isNaN(start)||isNaN(end)) return;
     if(end<=start) return;
 
-    const dateKey = toDateStr(d); // Track unique date for this slot
+    // FIXED: Use Local Date Key to match Sheet data
+    const dateKey = toDateStr(d);
 
     // Distribute hours across each slot this session covers
     HOURS.forEach((h,hi)=>{
@@ -636,7 +635,7 @@ function buildHeatmap(){
       const dayCount = cell.days.size; // FIXED: use unique day count
       const avg = dayCount ? cell.total / dayCount : 0;
       
-      // Color by TOTAL hours (original design) — change to 'avg' if preferred
+      // Color by TOTAL hours (original design)
       const displayVal = cell.total;
       
       // FIXED: Tooltip now correctly references "days" not "sessions"
