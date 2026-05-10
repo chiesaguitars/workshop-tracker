@@ -1,5 +1,4 @@
-// sw.js — workshop-v8 (FIXED)
-const CACHE = 'workshop-v8';
+const CACHE = 'workshop-v7';
 const ASSETS = [
   '/workshop-tracker/',
   '/workshop-tracker/index.html',
@@ -22,6 +21,7 @@ self.addEventListener('activate', e => {
       ))
       .then(() => self.clients.claim())
       .then(() => {
+        // Tell all open tabs to reload so they get the new version immediately
         self.clients.matchAll({type:'window'}).then(clients => {
           clients.forEach(client => client.postMessage({type:'SW_UPDATED'}));
         });
@@ -30,20 +30,17 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first for API calls
-  if (e.request.url.includes('script.google.com')) {
+  // Always network-first for API calls
+  if(e.request.url.includes('script.google.com')) {
     e.respondWith(
       fetch(e.request).catch(() =>
-        new Response('{"ok":false,"error":"offline"}', {
-          headers: {'Content-Type': 'application/json'}
-        })
+        new Response('{"ok":false,"error":"offline"}', {headers:{'Content-Type':'application/json'}})
       )
     );
     return;
   }
-
-  // Network-first for HTML
-  if (e.request.destination === 'document') {
+  // Network-first for HTML — ensures updates are always picked up
+  if(e.request.destination === 'document') {
     e.respondWith(
       fetch(e.request)
         .then(res => {
@@ -55,7 +52,6 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-
   // Cache-first for other assets
   e.respondWith(
     caches.match(e.request).then(cached => cached ||

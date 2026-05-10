@@ -1,554 +1,689 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Workshop Tracker</title>
-  <link rel="manifest" href="/workshop-tracker/manifest.json" />
-  <meta name="theme-color" content="#1a1a1a" />
-  <style>
-    :root { --bg:#0f0f0f; --card:#1a1a1a; --text:#e6e6e6; --accent:#4ade80; --warn:#fbbf24; --err:#f87171; --muted:#6b7280; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-    .container { max-width: 800px; margin: 0 auto; padding: 1rem; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #333; margin-bottom: 1rem; }
-    h1 { font-size: 1.25rem; font-weight: 600; }
-    .status { font-size: 0.875rem; color: var(--muted); display: flex; align-items: center; gap: 0.5rem; }
-    .status.offline { color: var(--warn); }
-    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; overflow-x: auto; padding-bottom: 0.25rem; }
-    .tab-btn { background: var(--card); border: 1px solid #333; color: var(--text); padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; cursor: pointer; white-space: nowrap; }
-    .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
-    .tab { display: none; }
-    .tab.active { display: block; }
-    .card { background: var(--card); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #333; }
-    .timer-display { font-size: 2.5rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; margin: 1rem 0; }
-    .btn { background: var(--accent); color: #000; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 0.5rem; }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn.secondary { background: #333; color: var(--text); }
-    .btn.danger { background: var(--err); color: #fff; }
-    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin: 1rem 0; }
-    .stat { background: #222; padding: 0.75rem; border-radius: 6px; text-align: center; }
-    .stat-label { font-size: 0.75rem; color: var(--muted); display: block; }
-    .stat-value { font-size: 1.25rem; font-weight: 600; margin-top: 0.25rem; }
-    .form-group { margin-bottom: 1rem; }
-    label { display: block; font-size: 0.875rem; color: var(--muted); margin-bottom: 0.25rem; }
-    input, select, textarea { width: 100%; padding: 0.75rem; background: #222; border: 1px solid #444; border-radius: 6px; color: var(--text); font-size: 1rem; }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
-    .list { list-style: none; }
-    .list-item { padding: 0.75rem; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-    .list-item:last-child { border-bottom: none; }
-    .list-item .meta { font-size: 0.875rem; color: var(--muted); }
-    .list-item .actions { display: flex; gap: 0.5rem; }
-    .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
-    .badge.active { background: #22c55e22; color: #22c55e; }
-    .badge.finished { background: #6b728022; color: #9ca3af; }
-    .badge.pending { background: #fbbf2422; color: #f59e0b; }
-    .loading { opacity: 0.7; pointer-events: none; }
-    .from-cache { border-left: 3px solid var(--warn); }
-    .offline-banner { background: var(--warn); color: #000; padding: 0.5rem; text-align: center; font-size: 0.875rem; display: none; }
-    .offline-banner.show { display: block; }
-    .warn-notice { background: #7f1d1d; color: #fecaca; padding: 0.75rem; border-radius: 6px; margin: 0.5rem 0; font-size: 0.875rem; display: none; }
-    .warn-notice.show { display: block; }
-    @media (min-width: 768px) {
-      .stats-grid { grid-template-columns: repeat(4, 1fr); }
-      .btn { width: auto; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2C3E50">
+<link rel="manifest" href="manifest.json">
+<title>Workshop Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f5;--bg3:#ebebeb;
+  --txt:#1a1a1a;--txt2:#666;--txt3:#999;
+  --border:#e0e0e0;
+  --green:#2d6a2d;--green-bg:#eaf4ea;
+  --red:#a32d2d;--red-bg:#fadbd8;
+  --blue:#185fa5;--blue-bg:#e6f1fb;
+  --amber:#854f0b;--amber-bg:#faeeda;
+  --radius:12px;--radius-sm:8px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1a1a1a;--bg2:#242424;--bg3:#2e2e2e;
+    --txt:#f0f0f0;--txt2:#aaa;--txt3:#666;
+    --border:#333;
+    --green-bg:#1a2e1a;--red-bg:#2e1a1a;
+    --blue-bg:#1a2535;--amber-bg:#2e2010;
+  }
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);font-size:16px}
+#app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto}
+#header{padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+#header h1{font-size:18px;font-weight:600;color:var(--txt)}
+#header .sub{font-size:13px;color:var(--txt3);margin-top:2px}
+#screens{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.screen{display:none;padding:20px}
+.screen.active{display:block}
+#nav{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 14px;border:none;background:transparent;color:var(--txt3);font-size:10px;cursor:pointer;transition:color .15s}
+.nav-btn.active{color:var(--blue)}
+.nav-btn svg{width:22px;height:22px}
+.card{background:var(--bg2);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.btn{display:block;width:100%;padding:14px;font-size:16px;font-weight:600;border-radius:var(--radius);border:none;cursor:pointer;transition:opacity .15s;margin-bottom:10px}
+.btn:active{opacity:.75}
+.btn-start{background:var(--green-bg);color:var(--green)}
+.btn-stop{background:var(--red-bg);color:var(--red)}
+.btn-primary{background:var(--blue-bg);color:var(--blue)}
+.btn-neutral{background:var(--bg3);color:var(--txt2);font-weight:500}
+.btn-sm{display:inline-block;width:auto;padding:7px 14px;font-size:14px;font-weight:500}
+.btn-warn{background:var(--amber-bg);color:var(--amber)}
+#timer-display{text-align:center;font-size:64px;font-weight:300;letter-spacing:2px;font-variant-numeric:tabular-nums;padding:16px 0;color:var(--txt)}
+#timer-status{text-align:center;font-size:13px;color:var(--txt3);margin-bottom:16px;min-height:18px}
+#warn-banner{display:none;background:var(--red-bg);color:var(--red);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:12px;font-size:14px;font-weight:600;text-align:center}
+.ac-wrap{position:relative;margin-bottom:10px}
+.ac-wrap input{width:100%;padding:12px 14px;font-size:15px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--txt);outline:none}
+.ac-wrap input:focus{border-color:var(--blue)}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);z-index:100;margin-top:2px;overflow:hidden;max-height:200px;overflow-y:auto}
+.ac-item{padding:11px 14px;font-size:15px;cursor:pointer;color:var(--txt)}
+.ac-item:active,.ac-item.sel{background:var(--bg2)}
+.ac-item em{font-style:normal;font-weight:700;color:var(--blue)}
+select,input[type=text],input[type=number],textarea{width:100%;padding:12px 14px;font-size:15px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--txt);outline:none;margin-bottom:10px;appearance:none;-webkit-appearance:none}
+select:focus,input:focus,textarea:focus{border-color:var(--blue)}
+textarea{resize:none;min-height:72px}
+label{display:block;font-size:13px;color:var(--txt2);margin-bottom:4px;margin-top:6px}
+.todo-item{display:flex;align-items:flex-start;gap:12px;padding:14px;background:var(--bg2);border-radius:var(--radius-sm);margin-bottom:8px}
+.todo-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .2s}
+.todo-check.done{background:var(--green);border-color:var(--green)}
+.todo-check svg{display:none}
+.todo-check.done svg{display:block}
+.todo-text{flex:1;font-size:15px;color:var(--txt);line-height:1.4}
+.todo-sub{font-size:12px;color:var(--txt3);margin-top:2px}
+.guitar-item{display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--bg2);border-radius:var(--radius-sm);margin-bottom:8px}
+.guitar-info .gname{font-size:15px;font-weight:500;color:var(--txt)}
+.guitar-info .gsub{font-size:12px;color:var(--txt3);margin-top:2px}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.badge-active{background:var(--green-bg);color:var(--green)}
+.badge-done{background:var(--bg3);color:var(--txt3)}
+.log-item{padding:12px 14px;background:var(--bg2);border-radius:var(--radius-sm);margin-bottom:6px}
+.log-row{display:flex;justify-content:space-between;align-items:baseline}
+.log-title{font-size:14px;font-weight:500;color:var(--txt)}
+.log-val{font-size:14px;font-weight:600;color:var(--txt)}
+.log-sub{font-size:12px;color:var(--txt3);margin-top:2px}
+.flag-warn{color:var(--red);font-weight:700}
+#modal-wrap{display:none;position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center}
+#modal-wrap.open{display:flex}
+.modal{background:var(--bg);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:16px;color:var(--txt)}
+.modal-close{float:right;font-size:24px;color:var(--txt3);cursor:pointer;line-height:1;margin-top:-2px}
+.section-hdr{font-size:12px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:var(--bg2);border-radius:var(--radius-sm);padding:12px 14px}
+.stat-label{font-size:12px;color:var(--txt3);margin-bottom:3px}
+.stat-val{font-size:24px;font-weight:500;color:var(--txt)}
+.stat-sub{font-size:11px;color:var(--txt3);margin-top:2px}
+.prog-wrap{margin-bottom:16px}
+.prog-bg{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:4px 0}
+.prog-fill{height:5px;background:var(--green);border-radius:3px;transition:width .4s}
+.prog-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--txt3)}
+.empty{text-align:center;color:var(--txt3);font-size:14px;padding:32px 0}
+.spin{text-align:center;color:var(--txt3);font-size:13px;padding:20px}
+.offline-bar{display:none;background:var(--amber-bg);color:var(--amber);font-size:13px;font-weight:600;text-align:center;padding:6px;flex-shrink:0}
+.offline-bar.show{display:block}
+</style>
 </head>
 <body>
-  <div class="offline-banner" id="offlineBanner">⚠ Offline — data will sync when connected</div>
-  <div class="container">
-    <header>
-      <h1>Workshop Tracker</h1>
-      <div class="status" id="status">ready</div>
-    </header>
+<div id="app">
+  <div id="header">
+    <h1>Workshop Tracker</h1>
+    <div class="sub" id="hdr-date"></div>
+  </div>
+  <div class="offline-bar" id="offline-bar">Offline — data will sync when connected</div>
 
-    <div class="warn-notice" id="warnNotice">⚠ Timer running over 5 hours — did you forget to stop?</div>
-
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="timer">Timer</button>
-      <button class="tab-btn" data-tab="todo">To-do</button>
-      <button class="tab-btn" data-tab="guitars">Guitars</button>
-      <button class="tab-btn" data-tab="log">Log</button>
-    </div>
-
-    <!-- TIMER TAB -->
-    <div id="timer" class="tab active">
-      <div class="card">
-        <div class="timer-display" id="timerDisplay">00:00:00</div>
-        <button class="btn" id="timerToggle">Start workshop</button>
-        <button class="btn secondary" id="logSessionBtn" disabled>Log session</button>
-      </div>
-      <div class="stats-grid">
+  <div id="screens">
+    <!-- TIMER -->
+    <div class="screen active" id="screen-timer">
+      <div id="warn-banner">⚠ Timer running over 5 hours — did you forget to stop?</div>
+      <div id="timer-display">00:00:00</div>
+      <div id="timer-status">ready</div>
+      <button class="btn btn-start" id="main-btn" onclick="toggleTimer()">Start workshop</button>
+      <div class="stat-grid">
         <div class="stat">
-          <span class="stat-label">Today</span>
-          <span class="stat-value" id="todayHours">0.0 h</span>
+          <div class="stat-label">Today</div>
+          <div class="stat-val" id="stat-today">0.0 h</div>
+          <div class="stat-sub" id="stat-sessions">0 sessions</div>
         </div>
         <div class="stat">
-          <span class="stat-label">Sessions</span>
-          <span class="stat-value" id="sessionCount">0</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">This week</span>
-          <span class="stat-value" id="weekHours">0.0 h</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Target</span>
-          <span class="stat-value" id="weekTarget">39.5 h</span>
+          <div class="stat-label">This week</div>
+          <div class="stat-val" id="stat-week">0.0 h</div>
+          <div class="stat-sub">target 39.5 h</div>
         </div>
       </div>
+      <div class="prog-wrap">
+        <div class="prog-bg"><div class="prog-fill" id="week-bar" style="width:0%"></div></div>
+        <div class="prog-labels"><span>0 h</span><span id="week-pct">0%</span><span>39.5 h</span></div>
+      </div>
+      <div class="section-hdr">Log a task</div>
+      <div class="ac-wrap">
+        <input type="text" id="task-input" placeholder="What did you just finish?" autocomplete="off"
+          oninput="onTaskInput()" onkeydown="onTaskKey(event)">
+        <div class="ac-list" id="ac-list" style="display:none"></div>
+      </div>
+      <label>Guitar (optional)</label>
+      <select id="task-guitar">
+        <option value="">— select active guitar —</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="saveTask()" style="width:100%">Save task</button>
     </div>
 
-    <!-- TODO TAB -->
-    <div id="todo" class="tab">
-      <div class="card">
-        <div class="form-group">
-          <label for="todoInput">Add task</label>
-          <input type="text" id="todoInput" placeholder="e.g. Sand back, install frets…" />
-        </div>
-        <div class="form-group">
-          <label for="todoGuitar">Guitar (optional)</label>
-          <select id="todoGuitar">
-            <option value="">— select active guitar —</option>
-          </select>
-        </div>
-        <button class="btn" id="addTodoBtn">+ Add task</button>
-      </div>
-      <ul class="list" id="todoList">
-        <li class="list-item"><span>Loading…</span></li>
-      </ul>
+    <!-- TODO -->
+    <div class="screen" id="screen-todo">
+      <button class="btn btn-primary btn-sm" onclick="openAddTodo()" style="margin-bottom:16px">+ Add task</button>
+      <div id="todo-list"><div class="spin">Loading…</div></div>
     </div>
 
-    <!-- GUITARS TAB -->
-    <div id="guitars" class="tab">
-      <div class="card">
-        <button class="btn" id="newGuitarBtn">+ New build</button>
-      </div>
-      <div class="card">
-        <h3 style="margin-bottom:0.5rem">Active</h3>
-        <ul class="list" id="activeGuitars">
-          <li class="list-item"><span>Loading…</span></li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3 style="margin-bottom:0.5rem">Recently finished</h3>
-        <ul class="list" id="finishedGuitars">
-          <li class="list-item"><span>Loading…</span></li>
-        </ul>
-      </div>
+    <!-- GUITARS -->
+    <div class="screen" id="screen-guitars">
+      <button class="btn btn-primary btn-sm" onclick="openNewGuitar()" style="margin-bottom:16px">+ New build</button>
+      <div class="section-hdr">Active</div>
+      <div id="guitar-active"></div>
+      <div class="section-hdr">Recently finished</div>
+      <div id="guitar-finished"></div>
     </div>
 
-    <!-- LOG TAB (placeholder) -->
-    <div id="log" class="tab">
-      <div class="card">
-        <p>Session and task logs appear here. (Dashboard view recommended for analysis.)</p>
-        <a href="https://chiesaguitars.github.io/workshop-tracker/dashboard.html" class="btn secondary" style="display:inline-block;width:auto;margin-top:0.5rem">Open Dashboard ↗</a>
-      </div>
+    <!-- LOG -->
+    <div class="screen" id="screen-log">
+      <div class="section-hdr">Recent sessions</div>
+      <div id="log-sessions"></div>
+      <div class="section-hdr" style="margin-top:8px">Recent tasks</div>
+      <div id="log-tasks"></div>
     </div>
   </div>
 
-  <script>
-    // === CONFIG ===
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_52P3U_Dyj4Zq_2dMgX5eKAoUOCVOqijmLV-rohfacHOebleIu9xFCtNS9LX4RNE/exec';
+  <div id="nav">
+    <button class="nav-btn active" onclick="showScreen('timer',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      Timer
+    </button>
+    <button class="nav-btn" onclick="showScreen('todo',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      To-do
+    </button>
+    <button class="nav-btn" onclick="showScreen('guitars',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+      Guitars
+    </button>
+    <button class="nav-btn" onclick="showScreen('log',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      Log
+    </button>
+  </div>
+</div>
 
-    // === OPTIMISTIC UI MODULE ===
-    const LocalCache = {
-      KEY: {
-        GUITARS: 'wt_guitars_cache',
-        TODO: 'wt_todo_cache',
-        TS: { GUITARS: 'wt_guitars_ts', TODO: 'wt_todo_ts' }
-      },
-      TTL: 15 * 60 * 1000, // 15 minutes
+<div id="modal-wrap" onclick="closeModal(event)">
+  <div class="modal" id="modal-body"></div>
+</div>
 
-      get(key) {
-        try {
-          const data = localStorage.getItem(key);
-          const baseKey = key.replace('_cache','');
-          const ts = localStorage.getItem(this.KEY.TS[baseKey]);
-          if (!data || !ts) return null;
-          if (Date.now() - parseInt(ts) > this.TTL) return null;
-          return JSON.parse(data);
-        } catch { return null; }
-      },
+<script>
+const API = 'https://script.google.com/macros/s/AKfycby_52P3U_Dyj4Zq_2dMgX5eKAoUOCVOqijmLV-rohfacHOebleIu9xFCtNS9LX4RNE/exec';
 
-      set(key, data) {
-        try {
-          localStorage.setItem(key, JSON.stringify(data));
-          const baseKey = key.replace('_cache','');
-          localStorage.setItem(this.KEY.TS[baseKey], Date.now().toString());
-        } catch (e) { console.warn('Cache write failed', e); }
-      },
+// ── State ─────────────────────────────────────────────────────
+let isRunning=false, sessionStart=null, timerInterval=null;
+let lastTaskTime=null, keywords=[], guitars=[], acIdx=-1;
 
-      async fetchWithFallback(url, cacheKey, renderFn) {
-        const cached = this.get(cacheKey);
-        if (cached) renderFn(cached, true);
+// ── Offline queue ─────────────────────────────────────────────
+const Q = {
+  get(){ try{return JSON.parse(localStorage.getItem('offlineQ'))||[];}catch(e){return[];} },
+  add(p){ const q=Q.get(); q.push(p); localStorage.setItem('offlineQ',JSON.stringify(q)); },
+  clear(){ localStorage.removeItem('offlineQ'); },
+};
 
-        try {
-          const res = await fetch(url);
-          const json = await res.json();
-          if (json.ok && json.data) {
-            this.set(cacheKey, json.data);
-            renderFn(json.data, false);
-          }
-        } catch (err) {
-          console.warn('Background fetch failed, using cache', err);
-        }
-      },
+// ── Local cache ───────────────────────────────────────────────
+const LC = {
+  get(k){ try{return JSON.parse(localStorage.getItem(k))||[];}catch(e){return[];} },
+  set(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} },
+};
 
-      async optimisticAction(action, payload, cacheKey, updateFn, renderFn) {
-        let cache = this.get(cacheKey) || [];
-        cache = updateFn(cache, payload, 'optimistic');
-        this.set(cacheKey, cache);
-        if (renderFn) renderFn(cache, true);
-
-        // Fire API call in background
-        fetch(APPS_SCRIPT_URL + '?action=' + action, {
-          method: 'POST',
-          body: JSON.stringify({ ...payload, action }),
-          headers: {'Content-Type': 'application/json'}
-        }).catch(err => console.warn('Optimistic sync failed', err));
-      }
-    };
-
-    // === STATE ===
-    let timerInterval = null;
-    let timerStart = null;
-    let isRunning = false;
-    let activeGuitars = [];
-    let todoList = [];
-
-    // === DOM ===
-    const $ = id => document.getElementById(id);
-    const timerDisplay = $('timerDisplay');
-    const timerToggle = $('timerToggle');
-    const logSessionBtn = $('logSessionBtn');
-    const warnNotice = $('warnNotice');
-    const statusEl = $('status');
-    const offlineBanner = $('offlineBanner');
-
-    // === TIMER LOGIC ===
-    function loadTimerState() {
-      const saved = localStorage.getItem('wt_timer');
-      if (saved) {
-        const { start, running } = JSON.parse(saved);
-        if (running && start) {
-          timerStart = new Date(start);
-          isRunning = true;
-          startTimerUI();
-        }
-      }
-    }
-
-    function saveTimerState() {
-      localStorage.setItem('wt_timer', JSON.stringify({
-        start: timerStart?.toISOString(),
-        running: isRunning
-      }));
-    }
-
-    function formatDuration(ms) {
-      const totalSec = Math.floor(ms / 1000);
-      const h = Math.floor(totalSec / 3600).toString().padStart(2,'0');
-      const m = Math.floor((totalSec % 3600) / 60).toString().padStart(2,'0');
-      const s = (totalSec % 60).toString().padStart(2,'0');
-      return `${h}:${m}:${s}`;
-    }
-
-    function updateTimerDisplay() {
-      if (!isRunning || !timerStart) return;
-      const elapsed = Date.now() - timerStart.getTime();
-      timerDisplay.textContent = formatDuration(elapsed);
-      // Warn after 5 hours
-      if (elapsed > 5 * 3600 * 1000) {
-        warnNotice.classList.add('show');
-      } else {
-        warnNotice.classList.remove('show');
-      }
-    }
-
-    function startTimerUI() {
-      isRunning = true;
-      timerToggle.textContent = 'Stop workshop';
-      timerToggle.classList.add('danger');
-      logSessionBtn.disabled = false;
-      timerInterval = setInterval(updateTimerDisplay, 1000);
-      updateTimerDisplay();
-      saveTimerState();
-    }
-
-    function stopTimerUI() {
-      isRunning = false;
-      clearInterval(timerInterval);
-      timerToggle.textContent = 'Start workshop';
-      timerToggle.classList.remove('danger');
-      logSessionBtn.disabled = true;
-      warnNotice.classList.remove('show');
-      saveTimerState();
-    }
-
-    timerToggle.addEventListener('click', () => {
-      if (isRunning) {
-        stopTimerUI();
-      } else {
-        timerStart = new Date();
-        startTimerUI();
-      }
-    });
-
-    logSessionBtn.addEventListener('click', async () => {
-      if (!timerStart || isRunning) return;
-      const end = new Date();
-      const durationSec = Math.floor((end - timerStart) / 1000);
-      
-      // Optimistic: update stats immediately
-      updateStatsOptimistic(durationSec);
-      
-      // Sync to server
-      try {
-        await fetch(APPS_SCRIPT_URL + '?action=sessionSave', {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'sessionSave',
-            startTime: timerStart.toISOString(),
-            endTime: end.toISOString(),
-            durationSec
-          }),
-          headers: {'Content-Type': 'application/json'}
+// ── Init ──────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('hdr-date').textContent =
+    new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  updateOnlineStatus();
+  updateStats();
+  flushQueue();
+  restoreTimer();
+  // Clear legacy cache formats
+  localStorage.removeItem('guitars_cache');
+  loadAppData();
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        newSW.addEventListener('statechange', () => {
+          if(newSW.state === 'activated') location.reload();
         });
-      } catch (e) {
-        console.warn('Session save failed, will retry', e);
-      }
-      
-      stopTimerUI();
-      timerDisplay.textContent = '00:00:00';
-    });
-
-    function updateStatsOptimistic(durationSec) {
-      const todayHrs = parseFloat($('todayHours').textContent) || 0;
-      const weekHrs = parseFloat($('weekHours').textContent) || 0;
-      const sessions = parseInt($('sessionCount').textContent) || 0;
-      
-      const hrs = durationSec / 3600;
-      $('todayHours').textContent = (todayHrs + hrs).toFixed(1) + ' h';
-      $('weekHours').textContent = (weekHrs + hrs).toFixed(1) + ' h';
-      $('sessionCount').textContent = (sessions + 1).toString();
-    }
-
-    // === TODO TAB ===
-    function renderTodo(todos, fromCache = false) {
-      const list = $('todoList');
-      list.classList.toggle('from-cache', fromCache);
-      
-      if (!todos || todos.length === 0) {
-        list.innerHTML = '<li class="list-item"><span>No pending tasks</span></li>';
-        return;
-      }
-      
-      todoList = todos;
-      list.innerHTML = todos.map(t => `
-        <li class="list-item" data-id="${t.id}">
-          <div>
-            <div>${t.task}</div>
-            ${t.guitarId ? `<span class="meta">${t.guitarId}</span>` : ''}
-          </div>
-          <div class="actions">
-            <button class="btn secondary" style="padding:0.25rem 0.5rem;font-size:0.75rem" onclick="markTodoDone('${t.id}')">Done</button>
-          </div>
-        </li>
-      `).join('');
-    }
-
-    function loadTodoTab() {
-      LocalCache.fetchWithFallback(
-        APPS_SCRIPT_URL + '?action=todoList',
-        LocalCache.KEY.TODO,
-        (data, fromCache) => renderTodo(data, fromCache)
-      );
-    }
-
-    $('addTodoBtn').addEventListener('click', () => {
-      const task = $('todoInput').value.trim();
-      const guitarId = $('todoGuitar').value;
-      if (!task) return;
-      
-      LocalCache.optimisticAction(
-        'todoAdd',
-        { task, guitarId },
-        LocalCache.KEY.TODO,
-        (cache, p) => {
-          const newItem = {
-            id: 'temp_' + Date.now(),
-            task: p.task,
-            guitarId: p.guitarId || '',
-            status: 'Pending',
-            dateCreated: new Date().toLocaleDateString()
-          };
-          return [newItem, ...cache];
-        },
-        (cache) => renderTodo(cache, true)
-      );
-      
-      $('todoInput').value = '';
-    });
-
-    window.markTodoDone = function(todoId) {
-      // Optimistic update
-      LocalCache.optimisticAction(
-        'todoDone',
-        { todoId },
-        LocalCache.KEY.TODO,
-        (cache, p) => cache.filter(t => String(t.id) !== String(p.todoId)),
-        (cache) => renderTodo(cache, true)
-      );
-    };
-
-    // === GUITARS TAB ===
-    function renderGuitars(guitars, fromCache = false) {
-      const activeList = $('activeGuitars');
-      const finishedList = $('finishedGuitars');
-      
-      activeList.classList.toggle('from-cache', fromCache);
-      finishedList.classList.toggle('from-cache', fromCache);
-      
-      if (!guitars || guitars.length === 0) {
-        activeList.innerHTML = '<li class="list-item"><span>No guitars</span></li>';
-        finishedList.innerHTML = '';
-        return;
-      }
-      
-      const active = guitars.filter(g => g.status === 'Active');
-      const finished = guitars.filter(g => g.status === 'Finished').slice(0, 5);
-      
-      activeList.innerHTML = active.map(g => `
-        <li class="list-item" data-id="${g.id}">
-          <div>
-            <div><strong>${g.id}</strong> — ${g.customer}</div>
-            <span class="meta">${g.model} • ${g.topWood} / ${g.backSides}</span>
-          </div>
-          <div class="actions">
-            <button class="btn secondary" style="padding:0.25rem 0.5rem;font-size:0.75rem" onclick="finishGuitar('${g.id}')">Finish</button>
-          </div>
-        </li>
-      `).join('') || '<li class="list-item"><span>No active builds</span></li>';
-      
-      finishedList.innerHTML = finished.map(g => `
-        <li class="list-item">
-          <div>
-            <div><strong>${g.id}</strong> — ${g.customer}</div>
-            <span class="meta">Finished ${g.dateFinished || '—'}</span>
-          </div>
-          <span class="badge finished">Finished</span>
-        </li>
-      `).join('') || '<li class="list-item"><span>—</span></li>';
-      
-      // Update guitar dropdown for todo
-      const select = $('todoGuitar');
-      const currentVal = select.value;
-      select.innerHTML = '<option value="">— select active guitar —</option>' + 
-        active.map(g => `<option value="${g.id}">${g.id} — ${g.customer}</option>`).join('');
-      if (active.some(g => g.id === currentVal)) select.value = currentVal;
-      
-      activeGuitars = active;
-    }
-
-    function loadGuitarsTab() {
-      LocalCache.fetchWithFallback(
-        APPS_SCRIPT_URL + '?action=guitarList',
-        LocalCache.KEY.GUITARS,
-        (data, fromCache) => renderGuitars(data, fromCache)
-      );
-    }
-
-    $('newGuitarBtn').addEventListener('click', () => {
-      // Minimal new guitar flow - in production you'd show a modal/form
-      const customer = prompt('Customer name:');
-      if (!customer) return;
-      const model = prompt('Model (e.g. 65A):') || '65A';
-      
-      LocalCache.optimisticAction(
-        'guitarNew',
-        { customer, model },
-        LocalCache.KEY.GUITARS,
-        (cache, p) => {
-          const newItem = {
-            id: 'temp_' + Date.now(),
-            customer: p.customer,
-            model: p.model,
-            status: 'Active',
-            dateStarted: new Date().toLocaleDateString()
-          };
-          return [newItem, ...cache];
-        },
-        (cache) => renderGuitars(cache, true)
-      );
-    });
-
-    window.finishGuitar = function(guitarId) {
-      if (!confirm('Mark this guitar as finished?')) return;
-      
-      LocalCache.optimisticAction(
-        'guitarFinish',
-        { guitarId },
-        LocalCache.KEY.GUITARS,
-        (cache, p) => cache.map(g => 
-          String(g.id) === String(p.guitarId) 
-            ? {...g, status: 'Finished', dateFinished: new Date().toLocaleDateString()} 
-            : g
-        ),
-        (cache) => renderGuitars(cache, true)
-      );
-    };
-
-    // === TAB SWITCHING ===
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        const tabId = btn.dataset.tab;
-        $(tabId).classList.add('active');
-        
-        if (tabId === 'todo') loadTodoTab();
-        if (tabId === 'guitars') loadGuitarsTab();
       });
+    }).catch(()=>{});
+    navigator.serviceWorker.addEventListener('message', e => {
+      if(e.data && e.data.type === 'SW_UPDATED') location.reload();
     });
+  }
+});
 
-    // === ONLINE/OFFLINE ===
-    function updateOnlineStatus() {
-      const online = navigator.onLine;
-      statusEl.textContent = online ? 'ready' : 'offline';
-      statusEl.classList.toggle('offline', !online);
-      offlineBanner.classList.toggle('show', !online);
+async function loadAppData() {
+  // Always fetch fresh from API — never trust stale cache for guitar fields
+  try {
+    const [kd, gd] = await Promise.all([
+      apiCall({action:'keywordList'}),
+      apiCall({action:'guitarList'}),
+    ]);
+    keywords = kd.keywords || [];
+    guitars  = gd.guitars  || [];
+    populateGuitarDropdown();
+    LC.set('guitars_cache', JSON.stringify(guitars));
+  } catch(e) {
+    // Offline fallback
+    try {
+      const cached = JSON.parse(localStorage.getItem('guitars_cache')||'[]');
+      if(cached.length) { guitars=cached; populateGuitarDropdown(); }
+    } catch(e2){}
+  }
+  // Load todos in background — not critical for timer screen
+  try {
+    const td = await apiCall({action:'todoList'});
+    LC.set('todos_cache', td.todos||[]);
+  } catch(e) {}
+}
+
+function restoreTimer() {
+  const saved = localStorage.getItem('sessionStart');
+  if(!saved) return;
+  const start = new Date(saved);
+  if(isNaN(start)) { localStorage.removeItem('sessionStart'); return; }
+  // Resume — session was running when app closed
+  sessionStart = start;
+  if(!lastTaskTime) lastTaskTime = start;
+  isRunning = true;
+  const btn = document.getElementById('main-btn');
+  btn.textContent = 'Stop workshop';
+  btn.className   = 'btn btn-stop';
+  const elapsed = Math.floor((Date.now()-start)/1000);
+  document.getElementById('timer-display').textContent = fmtTimer(elapsed);
+  document.getElementById('timer-status').textContent  = 'resumed — running since '+
+    start.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  timerInterval = setInterval(() => {
+    const sec = Math.floor((Date.now()-sessionStart)/1000);
+    document.getElementById('timer-display').textContent = fmtTimer(sec);
+    document.getElementById('warn-banner').style.display = sec>=18000 ? 'block' : 'none';
+  }, 1000);
+}
+
+window.addEventListener('online',  () => { updateOnlineStatus(); flushQueue(); });
+window.addEventListener('offline', () => updateOnlineStatus());
+
+function updateOnlineStatus() {
+  document.getElementById('offline-bar').classList.toggle('show', !navigator.onLine);
+}
+
+// ── Offline queue flush ───────────────────────────────────────
+async function flushQueue() {
+  if(!navigator.onLine) return;
+  const q = Q.get();
+  if(!q.length) return;
+  for(const p of q) {
+    try { await apiCall(p); } catch(e) { return; }
+  }
+  Q.clear();
+}
+
+// ── Navigation ────────────────────────────────────────────────
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='todo')    renderTodos();
+  if(name==='guitars') renderGuitars();
+  if(name==='log')     renderLog();
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function apiCall(params) {
+  // Apps Script requires GET — POST is blocked by CORS from external origins
+  // URLSearchParams handles encoding of spaces and special chars correctly
+  const url = API + '?' + new URLSearchParams(params).toString();
+  const res = await fetch(url, {redirect:'follow'});
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error||'API error');
+  return data;
+}
+
+async function api(params) {
+  if(!navigator.onLine) {
+    Q.add(params);
+    return { ok: true, queued: true };
+  }
+  try {
+    return await apiCall(params);
+  } catch(e) {
+    Q.add(params);
+    throw e;
+  }
+}
+
+// ── Timer ─────────────────────────────────────────────────────
+function toggleTimer() {
+  if(!isRunning) startTimer(); else stopTimer();
+}
+
+function startTimer() {
+  sessionStart = new Date();
+  if(!lastTaskTime) lastTaskTime = new Date();
+  isRunning = true;
+  localStorage.setItem('sessionStart', sessionStart.toISOString());
+  const btn = document.getElementById('main-btn');
+  btn.textContent = 'Stop workshop';
+  btn.className   = 'btn btn-stop';
+  document.getElementById('timer-status').textContent = 'session running';
+  timerInterval = setInterval(() => {
+    const sec = Math.floor((Date.now()-sessionStart)/1000);
+    document.getElementById('timer-display').textContent = fmtTimer(sec);
+    document.getElementById('warn-banner').style.display = sec>=18000 ? 'block' : 'none';
+  }, 1000);
+}
+
+async function stopTimer() {
+  clearInterval(timerInterval);
+  const endTime = new Date();
+  const dSec    = Math.floor((endTime-sessionStart)/1000);
+  isRunning     = false;
+  localStorage.removeItem('sessionStart');
+  document.getElementById('warn-banner').style.display  = 'none';
+  document.getElementById('timer-display').textContent   = '00:00:00';
+  document.getElementById('timer-status').textContent    = 'saving…';
+  document.getElementById('main-btn').textContent        = 'Start workshop';
+  document.getElementById('main-btn').className          = 'btn btn-start';
+
+  const sessions = LC.get('sessions');
+  sessions.push({ date:toDateStr(sessionStart), dHrs:dSec/3600 });
+  LC.set('sessions', sessions);
+
+  try {
+    await api({
+      action:'sessionSave',
+      startTime:sessionStart.toISOString(),
+      endTime:endTime.toISOString(),
+      durationSec:dSec,
+    });
+    document.getElementById('timer-status').textContent = 'saved — '+fmtMins(dSec);
+  } catch(e) {
+    document.getElementById('timer-status').textContent = 'queued for sync';
+  }
+  sessionStart = null;
+  updateStats();
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function updateStats() {
+  const sessions = LC.get('sessions');
+  const today    = toDateStr(new Date());
+  const mon      = getMondayStr();
+  const todaySec = sessions.filter(s=>s.date===today).reduce((a,s)=>a+s.dHrs*3600,0);
+  const weekSec  = sessions.filter(s=>s.date>=mon).reduce((a,s)=>a+s.dHrs*3600,0);
+  const cnt      = sessions.filter(s=>s.date===today).length;
+  document.getElementById('stat-today').textContent    = (todaySec/3600).toFixed(1)+' h';
+  document.getElementById('stat-sessions').textContent = cnt+(cnt===1?' session':' sessions');
+  document.getElementById('stat-week').textContent     = (weekSec/3600).toFixed(1)+' h';
+  const pct = Math.min(100,Math.round(weekSec/3600/39.5*100));
+  document.getElementById('week-bar').style.width      = pct+'%';
+  document.getElementById('week-pct').textContent      = pct+'% of target';
+}
+
+// ── Autocomplete ──────────────────────────────────────────────
+
+
+function onTaskInput() {
+  const val = document.getElementById('task-input').value.trim().toLowerCase();
+  acIdx = -1;
+  if(!val){hideAc();return;}
+  const matches = keywords.filter(k=>k.toLowerCase().includes(val)).slice(0,7);
+  if(!matches.length){hideAc();return;}
+  const list = document.getElementById('ac-list');
+  list.innerHTML = matches.map((m,i)=>{
+    const idx=m.toLowerCase().indexOf(val);
+    const hi=m.slice(0,idx)+'<em>'+m.slice(idx,idx+val.length)+'</em>'+m.slice(idx+val.length);
+    return `<div class="ac-item" data-i="${i}" onmousedown="pickAc('${m.replace(/'/g,"\\'")}')">${hi}</div>`;
+  }).join('');
+  list.style.display='block';
+}
+
+function pickAc(val){ document.getElementById('task-input').value=val; hideAc(); }
+function hideAc(){ document.getElementById('ac-list').style.display='none'; acIdx=-1; }
+
+function onTaskKey(e) {
+  const items=document.querySelectorAll('.ac-item');
+  if(e.key==='ArrowDown'){e.preventDefault();acIdx=Math.min(acIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('sel',i===acIdx));}
+  else if(e.key==='ArrowUp'){e.preventDefault();acIdx=Math.max(acIdx-1,0);items.forEach((el,i)=>el.classList.toggle('sel',i===acIdx));}
+  else if(e.key==='Enter'){if(acIdx>=0&&items[acIdx]){e.preventDefault();pickAc(items[acIdx].textContent);}else{hideAc();saveTask();}}
+  else if(e.key==='Escape') hideAc();
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.ac-wrap')) hideAc(); });
+
+async function saveTask() {
+  const desc = document.getElementById('task-input').value.trim();
+  if(!desc){document.getElementById('task-input').focus();return;}
+  const guitarId = document.getElementById('task-guitar').value;
+  const now      = new Date();
+  const start    = lastTaskTime||now;
+  const dMin     = parseFloat(((now-start)/60000).toFixed(1));
+  lastTaskTime   = now;
+  document.getElementById('task-input').value='';
+  hideAc();
+  if(!keywords.includes(desc)) keywords.push(desc);
+  const tasks=LC.get('tasks');
+  tasks.push({date:toDateStr(now),name:desc,dMin,guitarId});
+  LC.set('tasks',tasks);
+  try {
+    await api({action:'taskSave',taskName:desc,guitarId,startTime:start.toISOString(),endTime:now.toISOString(),durationMin:dMin});
+  } catch(e) { /* queued */ }
+}
+
+// ── Guitars ───────────────────────────────────────────────────
+
+
+function populateGuitarDropdown() {
+  const sel=document.getElementById('task-guitar');
+  const active=guitars.filter(g=>g.status==='Active');
+  sel.innerHTML='<option value="">— select active guitar —</option>'+
+    active.map(g=>`<option value="${g.id}">${g.id} — ${g.customer}</option>`).join('');
+}
+
+function renderGuitars() {
+  const active  =guitars.filter(g=>g.status==='Active');
+  const finished=guitars.filter(g=>g.status==='Finished').slice(-5).reverse();
+  // Store guitars in a lookup map for safe retrieval
+  window._guitarMap = {};
+  guitars.forEach(g => { window._guitarMap[g.id] = g; });
+
+  document.getElementById('guitar-active').innerHTML=active.length
+    ?active.map(g=>`
+      <div class="guitar-item">
+        <div class="guitar-info">
+          <div class="gname">${g.customer}</div>
+          <div class="gsub">${g.id} · ${g.model||'—'}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-active">Active</span>
+          <button class="btn btn-primary btn-sm" style="margin:0" onclick="editGuitar('${g.id}')">Edit</button>
+          <button class="btn btn-neutral btn-sm" style="margin:0" onclick="finishGuitar('${g.id}','${g.customer}')">Finish</button>
+        </div>
+      </div>`).join('')
+    :'<div class="empty">No active builds</div>';
+  document.getElementById('guitar-finished').innerHTML=finished.length
+    ?finished.map(g=>`
+      <div class="guitar-item">
+        <div class="guitar-info">
+          <div class="gname">${g.customer}</div>
+          <div class="gsub">${g.id} · ${g.model||'—'}</div>
+        </div>
+        <span class="badge badge-done">Finished</span>
+      </div>`).join('')
+    :'<div class="empty">None yet</div>';
+}
+
+function openNewGuitar() {
+  showModal(`
+    <span class="modal-close" onclick="closeModal()">×</span>
+    <div class="modal-title">New build</div>
+    <label>Customer</label><input type="text" id="ng-customer">
+    <label>Model</label><input type="text" id="ng-model">
+    <label>Top wood</label><input type="text" id="ng-top">
+    <label>Back & sides</label><input type="text" id="ng-back">
+    <label>Nr of frets</label><input type="number" id="ng-frets" placeholder="19">
+    <label>Fret markers</label><input type="text" id="ng-markers" placeholder="None / dots / custom">
+    <label>Tuning machines</label><input type="text" id="ng-tuning">
+    <label>Nut width (mm)</label><input type="number" id="ng-nut" placeholder="52">
+    <label>Neck thickness (mm)</label><input type="number" id="ng-neck" placeholder="21">
+    <label>Price (€)</label><input type="number" id="ng-price">
+    <label>Special notes</label><textarea id="ng-notes"></textarea>
+    <button class="btn btn-primary" onclick="submitNewGuitar()">Start build</button>
+  `);
+}
+
+async function submitNewGuitar() {
+  const customer=v('ng-customer');
+  if(!customer){alert('Customer name required');return;}
+  try {
+    const d=await api({action:'guitarNew',customer,model:v('ng-model'),topWood:v('ng-top'),
+      backSides:v('ng-back'),nrFrets:v('ng-frets'),fretMarkers:v('ng-markers'),
+      tuningMachines:v('ng-tuning'),nutWidth:v('ng-nut'),neckThickness:v('ng-neck'),
+      price:v('ng-price'),specialNotes:v('ng-notes')});
+    closeModal();
+    await loadAppData();
+    renderGuitars();
+    alert('Build started: '+(d.id||'queued'));
+  } catch(e){alert('Error: '+e.message);}
+}
+
+function editGuitar(id) {
+  const g = window._guitarMap[id];
+  if(!g) { alert('Guitar not found'); return; }
+  showModal(`
+    <span class="modal-close" onclick="closeModal()">×</span>
+    <div class="modal-title">Edit — ${g.id}</div>
+    <label>Customer</label><input type="text" id="eg-customer" value="${(g.customer||'').replace(/"/g,'&quot;')}">
+    <label>Model</label><input type="text" id="eg-model" value="${(g.model||'').replace(/"/g,'&quot;')}">
+    <label>Top wood</label><input type="text" id="eg-top" value="${(g.topWood||'').replace(/"/g,'&quot;')}">
+    <label>Back & sides</label><input type="text" id="eg-back" value="${(g.backSides||'').replace(/"/g,'&quot;')}">
+    <label>Nr of frets</label><input type="number" id="eg-frets" value="${g.nrFrets||''}">
+    <label>Fret markers</label><input type="text" id="eg-markers" value="${(g.fretMarkers||'').replace(/"/g,'&quot;')}">
+    <label>Tuning machines</label><input type="text" id="eg-tuning" value="${(g.tuningMachines||'').replace(/"/g,'&quot;')}">
+    <label>Nut width (mm)</label><input type="number" id="eg-nut" value="${g.nutWidth||''}">
+    <label>Neck thickness (mm)</label><input type="number" id="eg-neck" value="${g.neckThickness||''}">
+    <label>Price (€)</label><input type="number" id="eg-price" value="${g.price||''}">
+    <label>Special notes</label><textarea id="eg-notes">${(g.specialNotes||'').replace(/</g,'&lt;')}</textarea>
+    <input type="hidden" id="eg-id" value="${g.id}">
+    <button class="btn btn-primary" onclick="submitEditGuitar()">Save changes</button>
+  `);
+}
+
+async function submitEditGuitar() {
+  const id=v('eg-id');
+  const customer=v('eg-customer');
+  if(!customer){alert('Customer name required');return;}
+  try {
+    await api({action:'guitarUpdate',guitarId:id,customer,model:v('eg-model'),
+      topWood:v('eg-top'),backSides:v('eg-back'),nrFrets:v('eg-frets'),
+      fretMarkers:v('eg-markers'),tuningMachines:v('eg-tuning'),
+      nutWidth:v('eg-nut'),neckThickness:v('eg-neck'),
+      price:v('eg-price'),specialNotes:v('eg-notes')});
+    closeModal();
+    await loadAppData();
+    renderGuitars();
+  } catch(e){alert('Error: '+e.message);}
+}
+
+async function finishGuitar(id,customer) {
+  if(!confirm(`Mark "${customer}" (${id}) as finished?`)) return;
+  try {
+    await api({action:'guitarFinish',guitarId:id});
+    await loadAppData();
+    renderGuitars();
+  } catch(e){alert('Error: '+e.message);}
+}
+
+// ── ToDo ──────────────────────────────────────────────────────
+async function renderTodos() {
+  // Show cached todos immediately, then refresh
+  const cached=LC.get('todos_cache');
+  if(cached.length) _renderTodoList(cached);
+  else document.getElementById('todo-list').innerHTML='<div class="spin">Loading…</div>';
+  try {
+    const d=await apiCall({action:'todoList'});
+    const todos=d.todos||[];
+    LC.set('todos_cache',todos);
+    if(!todos.length){
+      document.getElementById('todo-list').innerHTML='<div class="empty">All done — or add a task above</div>';
+      return;
     }
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
+    _renderTodoList(todos);
+  } catch(e){
+    if(!cached.length) document.getElementById('todo-list').innerHTML='<div class="empty">Could not load — check connection</div>';
+  }
+}
 
-    // === SERVICE WORKER UPDATE HANDLER ===
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', e => {
-        if (e.data.type === 'SW_UPDATED') {
-          // Soft reload to get fresh assets
-          window.location.reload();
-        }
-      });
-    }
+function _renderTodoList(todos) {
+    if(!todos.length){document.getElementById('todo-list').innerHTML='<div class="empty">All done — or add a task above</div>';return;}
+    document.getElementById('todo-list').innerHTML=todos.map(t=>`
+      <div class="todo-item" id="todo-${t.id}">
+        <div class="todo-check" onclick="doneTodo('${t.id}')">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+        </div>
+        <div>
+          <div class="todo-text">${t.task}</div>
+          <div class="todo-sub">${t.guitarId?t.guitarId+' · ':''}${t.dateCreated||''}</div>
+        </div>
+      </div>`).join('');
+}
 
-    // === INIT ===
-    function init() {
-      updateOnlineStatus();
-      loadTimerState();
-      
-      // Load cached data for tabs on startup (silent)
-      const cachedGuitars = LocalCache.get(LocalCache.KEY.GUITARS);
-      if (cachedGuitars) renderGuitars(cachedGuitars, true);
-      
-      const cachedTodo = LocalCache.get(LocalCache.KEY.TODO);
-      if (cachedTodo) renderTodo(cachedTodo, true);
-      
-      // If on timer tab, don't fetch yet; fetch when tab is activated
-    }
+async function doneTodo(id) {
+  const check=document.querySelector(`#todo-${id} .todo-check`);
+  if(check) check.classList.add('done');
+  try { await api({action:'todoDone',todoId:id}); setTimeout(()=>renderTodos(),600); }
+  catch(e){alert('Error: '+e.message);}
+}
 
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
+function openAddTodo() {
+  const active=guitars.filter(g=>g.status==='Active');
+  showModal(`
+    <span class="modal-close" onclick="closeModal()">×</span>
+    <div class="modal-title">Add to-do</div>
+    <label>Task</label><input type="text" id="td-task" placeholder="e.g. glue back bracing">
+    <label>Guitar (optional)</label>
+    <select id="td-guitar">
+      <option value="">— general task —</option>
+      ${active.map(g=>`<option value="${g.id}">${g.id} — ${g.customer}</option>`).join('')}
+    </select>
+    <button class="btn btn-primary" onclick="submitTodo()">Add task</button>
+  `);
+  setTimeout(()=>document.getElementById('td-task')&&document.getElementById('td-task').focus(),100);
+}
+
+async function submitTodo() {
+  const task=v('td-task'), guitarId=v('td-guitar');
+  if(!task){alert('Task description required');return;}
+  try { await api({action:'todoAdd',task,guitarId}); closeModal(); renderTodos(); }
+  catch(e){alert('Error: '+e.message);}
+}
+
+// ── Log ───────────────────────────────────────────────────────
+function renderLog() {
+  const sessions=LC.get('sessions').slice().reverse().slice(0,10);
+  const tasks   =LC.get('tasks').slice().reverse().slice(0,10);
+  document.getElementById('log-sessions').innerHTML=sessions.length
+    ?sessions.map(s=>`
+      <div class="log-item">
+        <div class="log-row">
+          <span class="log-title">${s.date}</span>
+          <span class="log-val ${s.dHrs>5?'flag-warn':''}">${s.dHrs.toFixed(1)} h${s.dHrs>5?' ⚠':''}</span>
+        </div>
+      </div>`).join('')
+    :'<div class="empty">No sessions yet</div>';
+  document.getElementById('log-tasks').innerHTML=tasks.length
+    ?tasks.map(t=>`
+      <div class="log-item">
+        <div class="log-row">
+          <span class="log-title">${t.name}</span>
+          <span class="log-val ${t.dMin>300?'flag-warn':''}">${fmtMins2(t.dMin)}${t.dMin>300?' ⚠':''}</span>
+        </div>
+        <div class="log-sub">${t.date}${t.guitarId?' · '+t.guitarId:''}</div>
+      </div>`).join('')
+    :'<div class="empty">No tasks yet</div>';
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function showModal(html){ document.getElementById('modal-body').innerHTML=html; document.getElementById('modal-wrap').classList.add('open'); }
+function closeModal(e){ if(e&&e.target!==document.getElementById('modal-wrap'))return; document.getElementById('modal-wrap').classList.remove('open'); }
+
+// ── Helpers ───────────────────────────────────────────────────
+function v(id){ return (document.getElementById(id)||{}).value||''; }
+function fmtTimer(sec){ return [Math.floor(sec/3600),Math.floor((sec%3600)/60),sec%60].map(n=>String(n).padStart(2,'0')).join(':'); }
+function fmtMins(sec){ return sec<3600?Math.round(sec/60)+'m':(sec/3600).toFixed(1)+'h'; }
+function fmtMins2(min){ return min<60?Math.round(min)+'m':(min/60).toFixed(1)+'h'; }
+function toDateStr(d){ return d.toISOString().slice(0,10); }
+function getMondayStr(){ const now=new Date(),dow=(now.getDay()+6)%7,mon=new Date(now); mon.setDate(now.getDate()-dow); return toDateStr(mon); }
+</script>
 </body>
 </html>
